@@ -1,0 +1,482 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%% Vatsav Reddy
+%%%%%% International Institute of Information Technology, Hyderabad
+%%%%%% Presentation to Prof. Praveen Parchuri
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass{beamer}
+\hypersetup{pdfpagemode=FullScreen}
+\setbeamertemplate{navigation symbols}{}
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{amsmath,amssymb}
+\usepackage[T1]{fontenc}
+\usepackage{times}
+\usepackage{mathptmx}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{algorithm,algorithmic}
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+
+\mode<presentation>{
+\usetheme{Madrid}
+\usecolortheme{whale}
+}
+
+\setbeamercovered{transparent}
+\setbeamertemplate{bibliography item}[text]
+\setbeamertemplate{theorems}[numbered]
+\setbeamerfont{title}{size=\large}
+\setbeamerfont{date}{size=\tiny}
+\setbeamertemplate{itemize items}[ball]
+\setbeamertemplate{itemize subitem}[circle]
+\setbeamertemplate{itemize subsubitem}[triangle]
+\setbeamertemplate{caption}[numbered]
+
+%----------------------------------------------------------------------------------------
+%  TITLE PAGE
+%----------------------------------------------------------------------------------------
+
+\title[Neural Networks: Foundations]{Foundations of Neural Networks:\\
+McCulloch-Pitts, Perceptron \& Gradient Descent}
+
+\author[Vatsav Reddy]{\texorpdfstring{Vatsav Reddy}{Vatsav Reddy}}
+
+\institute[IIIT-H]{
+  {\small Presented to}\\
+  \medskip
+  {\normalsize Prof.\ Praveen Parchuri}\\
+  \vspace{0.5cm}
+  International Institute of Information Technology, Hyderabad
+}
+
+\date{\today}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Contents}
+  \tableofcontents
+\end{frame}
+
+\AtBeginSection[]{
+  \begin{frame}<beamer>
+    \frametitle{Current Section}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
+%==========================================================================
+\section{McCulloch-Pitts Neuron}
+%==========================================================================
+
+\begin{frame}{Biological Motivation}
+  \begin{itemize}
+    \item \textbf{Dendrite}: receives signals from other neurons
+    \item \textbf{Synapse}: point of connection to other neurons
+    \item \textbf{Soma}: processes information
+    \item \textbf{Axon}: transmits the output of this neuron
+  \end{itemize}
+  \vspace{0.3cm}
+  \begin{block}{Key Fact}
+    The brain is a massively parallel interconnected network of $\approx 10^{11}$ neurons,
+    arranged in a hierarchy. Each neuron may perform a certain role / respond to a certain stimulus.
+  \end{block}
+\end{frame}
+
+\begin{frame}{McCulloch-Pitts (MP) Neuron (1943)}
+  McCulloch (Neuroscientist) \& Pitts (Logician) proposed a highly simplified computational model.
+  \vspace{0.2cm}
+  \begin{columns}
+    \column{0.55\textwidth}
+    \begin{itemize}
+      \item Inputs $x_1, x_2, \ldots, x_n \in \{0,1\}$
+      \item $g$ aggregates: $\displaystyle g(x) = \sum_{i=1}^{n} x_i$
+      \item $f$ takes a binary decision:
+        \[
+          y = f(g(x)) = \begin{cases} 1 & g(x) \geq \theta \\ 0 & g(x) < \theta \end{cases}
+        \]
+      \item $\theta$ = \textbf{thresholding parameter} $\Rightarrow$ \emph{Threshold Logic}
+    \end{itemize}
+    \column{0.4\textwidth}
+    \begin{exampleblock}{Inhibitory Input Rule}
+      If any $x_i$ is inhibitory, $y = 0$ regardless of threshold.
+    \end{exampleblock}
+    \vspace{0.2cm}
+    \begin{alertblock}{Limitation}
+      Only \emph{linearly separable} Boolean functions. XOR cannot be represented!
+    \end{alertblock}
+  \end{columns}
+\end{frame}
+
+%==========================================================================
+\section{Perceptron \& Convergence Proof}
+%==========================================================================
+
+\begin{frame}{From MP Neuron to Perceptron}
+  Four key advances (Rosenblatt):
+  \begin{enumerate}
+    \item \textbf{Weights} $w_i$ on inputs (inputs are no longer equal)
+    \item \textbf{Weight learning mechanism} from data
+    \item \textbf{Real-valued inputs} (not limited to Boolean)
+    \item Refined \& carefully analyzed by Minsky \& Papert (1969)
+  \end{enumerate}
+  \vspace{0.3cm}
+  \[
+    y = \begin{cases} 1 & \sum_i w_i x_i \geq \theta \\ 0 & \sum_i w_i x_i < \theta \end{cases}
+  \]
+  Setting $x_0 = 1,\; w_0 = -\theta$ (\textbf{bias node}):
+  \[
+    y = \begin{cases} 1 & \mathbf{w}^T\mathbf{x} \geq 0 \\ 0 & \mathbf{w}^T\mathbf{x} < 0 \end{cases}
+  \]
+\end{frame}
+
+\begin{frame}{Perceptron Learning Algorithm}
+  \begin{algorithm}[H]
+  \begin{algorithmic}[1]
+    \REQUIRE $P$ = inputs with label 1;\quad $N$ = inputs with label 0
+    \ENSURE Weight vector $\mathbf{w}$
+    \STATE $P' \leftarrow P \cup N^{-}$ \quad (where $N^{-}$ contains negatives of all points in $N$)
+    \STATE Initialize $\mathbf{w}$ randomly
+    \WHILE{not converged}
+      \STATE Pick random $\mathbf{p} \in P'$;\quad normalize: $\mathbf{p} \leftarrow \mathbf{p}/\|\mathbf{p}\|$
+      \IF{$\mathbf{w}^T\mathbf{p} < 0$}
+        \STATE $\mathbf{w} \leftarrow \mathbf{w} + \mathbf{p}$
+      \ENDIF
+    \ENDWHILE
+  \end{algorithmic}
+  \caption{Perceptron Learning (normalized)}
+  \end{algorithm}
+  \vspace{0.2cm}
+  \begin{itemize}
+    \item $\mathbf{w}^T\mathbf{x} = 0$ defines the decision hyperplane; $\mathbf{w}$ is orthogonal to it.
+    \item Each correction rotates $\mathbf{w}$ closer (in angle) to the misclassified point.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Convergence Proof --- Setup \& Statement}
+  \begin{theorem}[Perceptron Convergence]
+    If $P$ and $N$ are finite and \emph{linearly separable}, the perceptron learning
+    algorithm makes at most $k_{\max}$ corrections and \textbf{converges} in finite steps.
+  \end{theorem}
+
+  \vspace{0.2cm}
+  \textbf{Setup:}
+  \begin{itemize}
+    \item Let $\mathbf{w}^*$ be the (normalized) optimal solution: $\|\mathbf{w}^*\| = 1$.
+    \item Since data is linearly separable, $\exists\;\delta > 0$ such that
+          $\mathbf{w}^{*T}\mathbf{p} \geq \delta$ for all normalized $\mathbf{p} \in P'$.
+    \item Let $\beta_k$ = angle between $\mathbf{w}^*$ and $\mathbf{w}_k$ after $k$ corrections.
+    \item Track:
+    \[
+      \cos\beta_k = \frac{\mathbf{w}^*\cdot\mathbf{w}_k}{\|\mathbf{w}^*\|\,\|\mathbf{w}_k\|}
+      = \frac{\mathbf{w}^*\cdot\mathbf{w}_k}{\|\mathbf{w}_k\|}
+    \]
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Convergence Proof --- Numerator Grows Linearly}
+  At step $t$: correction is $\mathbf{w}_{t+1} = \mathbf{w}_t + \mathbf{p}_t$
+  (triggered because $\mathbf{w}_t^T\mathbf{p}_t < 0$).
+
+  \vspace{0.2cm}
+  \textbf{Effect on numerator $\mathbf{w}^*\cdot\mathbf{w}_{t+1}$:}
+  \begin{align*}
+    \mathbf{w}^*\cdot\mathbf{w}_{t+1} &= \mathbf{w}^*\cdot(\mathbf{w}_t + \mathbf{p}_t) \\
+                                        &= \mathbf{w}^*\cdot\mathbf{w}_t + \underbrace{\mathbf{w}^*\cdot\mathbf{p}_t}_{\geq\;\delta} \\[4pt]
+                                        &\geq \mathbf{w}^*\cdot\mathbf{w}_t + \delta
+  \end{align*}
+
+  \vspace{0.1cm}
+  By induction over $k$ corrections (starting from $\mathbf{w}_0$):
+  \[
+    \boxed{\mathbf{w}^*\cdot\mathbf{w}_k \;\geq\; \mathbf{w}^*\cdot\mathbf{w}_0 + k\delta}
+  \]
+  The numerator grows \textbf{at least linearly} in $k$.
+\end{frame}
+
+\begin{frame}{Convergence Proof --- Denominator Grows Sub-Linearly}
+  \textbf{Effect on $\|\mathbf{w}_{t+1}\|^2$:}
+  \begin{align*}
+    \|\mathbf{w}_{t+1}\|^2 &= \|\mathbf{w}_t + \mathbf{p}_t\|^2 \\
+                             &= \|\mathbf{w}_t\|^2 + 2\underbrace{\mathbf{w}_t^T\mathbf{p}_t}_{<\;0}
+                                + \underbrace{\|\mathbf{p}_t\|^2}_{=\;1\;(\text{normalized})} \\[4pt]
+                             &\leq \|\mathbf{w}_t\|^2 + 1
+  \end{align*}
+
+  By induction after $k$ corrections:
+  \[
+    \boxed{\|\mathbf{w}_k\|^2 \;\leq\; \|\mathbf{w}_0\|^2 + k}
+  \]
+
+  \begin{block}{Observation}
+    Denominator $\|\mathbf{w}_k\| \leq \sqrt{\|\mathbf{w}_0\|^2 + k}$, which grows only as
+    $\sqrt{k}$ --- \textbf{sub-linearly} in $k$.
+  \end{block}
+\end{frame}
+
+\begin{frame}{Convergence Proof --- Conclusion}
+  Combining both bounds:
+  \[
+    \cos\beta_k
+    = \frac{\mathbf{w}^*\cdot\mathbf{w}_k}{\|\mathbf{w}^*\|\,\|\mathbf{w}_k\|}
+    \;\geq\;
+    \frac{\mathbf{w}^*\cdot\mathbf{w}_0 + k\delta}{\sqrt{\|\mathbf{w}_0\|^2 + k}}
+    \;\xrightarrow{k\to\infty}\; \infty
+  \]
+
+  This grows proportionally to $\sqrt{k}\cdot\delta$.
+
+  \begin{alertblock}{Contradiction!}
+    $\cos\beta_k \leq 1$ by definition of cosine --- it can never exceed 1.
+  \end{alertblock}
+
+  \begin{block}{Therefore}
+    $k$ must be \textbf{bounded above} by some finite $k_{\max}$:
+    \[
+      k \;\leq\; k_{\max} \;=\; \frac{(\mathbf{w}^*\cdot\mathbf{w}_0)^2 + \|\mathbf{w}_0\|^2 \delta^2}{\delta^2}
+      \quad (\text{approx.})
+    \]
+    $\Rightarrow$ Finite corrections $\Rightarrow$ Algorithm \textbf{converges}. \hfill $\square$
+  \end{block}
+\end{frame}
+
+%==========================================================================
+\section{Sigmoid Neuron \& Loss}
+%==========================================================================
+
+\begin{frame}{Sigmoid Neuron}
+  \begin{columns}
+    \column{0.5\textwidth}
+    \textbf{Perceptron}: hard threshold, binary output.\\[6pt]
+    \textbf{Sigmoid Neuron}: smooth, real-valued output in $(0,1)$:
+    \[
+      y = \sigma(\mathbf{w}^T\mathbf{x}) = \frac{1}{1+e^{-\mathbf{w}^T\mathbf{x}}}
+    \]
+    \begin{itemize}
+      \item $\mathbf{w}^T\mathbf{x} \to +\infty \;\Rightarrow\; y \to 1$
+      \item $\mathbf{w}^T\mathbf{x} \to -\infty \;\Rightarrow\; y \to 0$
+      \item $\mathbf{w}^T\mathbf{x} = 0 \;\Rightarrow\; y = \tfrac{1}{2}$
+    \end{itemize}
+    \column{0.45\textwidth}
+    \begin{block}{Key Property}
+      \[
+        \sigma'(x) = \sigma(x)(1 - \sigma(x))
+      \]
+      Output as \emph{probability} enables gradient-based learning --- no sharp jump around threshold $(-w_0)$.
+    \end{block}
+    \begin{exampleblock}{Loss Function}
+      \[
+        \mathcal{L}(\mathbf{w},b)
+        = \frac{1}{N}\sum_{i=1}^{N}\bigl(y_i - \sigma(x_i)\bigr)^2
+      \]
+    \end{exampleblock}
+  \end{columns}
+\end{frame}
+
+%==========================================================================
+\section{Taylor Series \& Gradient Descent Proofs}
+%==========================================================================
+
+\begin{frame}{Taylor Series --- The Foundation}
+  \textbf{Scalar form:}
+  \[
+    f(x+h) = f(x) + hf'(x) + \frac{h^2}{2}f''(x) + \cdots
+  \]
+  Rewriting with $y = x+h$:
+  \[
+    f(y) = f(x) + (y-x)f'(x) + \frac{(y-x)^2}{2}f''(x) + \cdots
+  \]
+  \textbf{Multivariate form} (gradient $\nabla f$, Hessian $H$):
+  \[
+    f(y) = f(x) + (y-x)^T\nabla f(x) + \frac{1}{2}(y-x)^T H(x)(y-x) + \cdots
+  \]
+  Setting $\mathbf{w}_{k+1} = \mathbf{w}_k + s$:
+  \[
+    \boxed{f(\mathbf{w}_{k+1}) = f(\mathbf{w}_k) + s^T\nabla f(\mathbf{w}_k)
+    + \frac{1}{2}s^T H s + \cdots}
+  \]
+  \small{(Here $\nabla f$ and $H$ are evaluated at $\mathbf{w}_k$.)}
+\end{frame}
+
+\begin{frame}{GD via Taylor Series}
+  Apply to loss $J(\mathbf{w})$ with step $s = \mathbf{w}_{k+1} - \mathbf{w}_k$:
+  \[
+    J(\mathbf{w}_{k+1})
+    = J(\mathbf{w}_k) + (\mathbf{w}_{k+1}-\mathbf{w}_k)^T\nabla J(\mathbf{w}_k)
+    + \frac{1}{2}(\mathbf{w}_{k+1}-\mathbf{w}_k)^T H (\mathbf{w}_{k+1}-\mathbf{w}_k) + \cdots
+  \]
+  Compactly:
+  \[
+    J(\mathbf{w}_{k+1}) = J(\mathbf{w}_k) + s^T\nabla J + \frac{1}{2}s^T H s + \cdots
+  \]
+  \begin{block}{Gradient Descent Update}
+    \[
+      s \;=\; -\eta\nabla J(\mathbf{w}_k)
+      \quad\Longleftrightarrow\quad
+      \mathbf{w}_{k+1} = \mathbf{w}_k - \eta\,\nabla J(\mathbf{w}_k)
+    \]
+  \end{block}
+\end{frame}
+
+\begin{frame}{Why Does GD Work? --- Non-Increasing Updates}
+  Use the \textbf{first-order} Taylor approximation and substitute $s = -\eta\nabla J$:
+  \begin{align*}
+    J(\mathbf{w}_{k+1}) &\approx J(\mathbf{w}_k) + s^T\nabla J(\mathbf{w}_k) \\[4pt]
+                         &= J(\mathbf{w}_k) + (-\eta\nabla J)^T \nabla J \\[4pt]
+                         &= J(\mathbf{w}_k) - \eta\underbrace{\|\nabla J(\mathbf{w}_k)\|^2}_{\geq\;0}
+  \end{align*}
+  \begin{block}{Conclusion}
+    For any $\eta > 0$:
+    \[
+      J(\mathbf{w}_{k+1}) \leq J(\mathbf{w}_k)
+      \quad\Rightarrow\quad \text{\textbf{Non-increasing} at every step.}
+    \]
+    When $\nabla J = \mathbf{0}$: no change in objective $\Rightarrow$ iterations stop at a stationary point.
+  \end{block}
+\end{frame}
+
+\begin{frame}{Why Steepest Descent? --- Directional Derivative}
+  From the first-order Taylor expansion:
+  \[
+    J(\mathbf{x}+\Delta\mathbf{x}) \approx J(\mathbf{x}) + \Delta\mathbf{x}^T\nabla J(\mathbf{x})
+  \]
+  The \textbf{directional derivative} along unit vector $\mathbf{u}$ is $\mathbf{u}^T\nabla J$.\\[6pt]
+  \textbf{Best direction to decrease $J$?}
+  \[
+    \min_{\mathbf{u},\;\|\mathbf{u}\|=1}\; \mathbf{u}^T\nabla J
+    \;=\; \min_{\mathbf{u},\;\|\mathbf{u}\|=1}\;\|\mathbf{u}\|\,\|\nabla J\|\cos\theta
+  \]
+  Minimized when $\cos\theta = -1$, i.e., $\mathbf{u}$ points \textbf{opposite} to $\nabla J$.
+  \begin{block}{Steepest Descent}
+    \[
+      \mathbf{x}_{\text{new}} = \mathbf{x}_{\text{old}} - \eta\,\nabla J
+    \]
+    Moving opposite to the gradient gives the \textbf{steepest decrease} in $J$.
+  \end{block}
+\end{frame}
+
+\begin{frame}{Is There an Optimal Learning Rate?}
+  Using the \textbf{second-order} Taylor expansion with $s = -\eta\nabla J$:
+  \[
+    J(\mathbf{w}_{k+1})
+    = J(\mathbf{w}_k) - \eta\nabla J^T\nabla J + \frac{\eta^2}{2}\nabla J^T H\nabla J
+  \]
+  Differentiate w.r.t.\ $\eta$ and set to zero:
+  \[
+    \frac{d}{d\eta}J(\mathbf{w}_{k+1})
+    = -\|\nabla J\|^2 + \eta\,\nabla J^T H\nabla J = 0
+  \]
+  \[
+    \boxed{\eta^* = \frac{\|\nabla J\|^2}{\nabla J^T H\nabla J}}
+  \]
+  \begin{alertblock}{Note}
+    $\eta^*$ changes at every iteration $k$ since $\nabla J$ and $H$ both depend on $\mathbf{w}_k$.
+    Computing $H$ at every step is expensive --- motivates second-order methods.
+  \end{alertblock}
+\end{frame}
+
+\begin{frame}{Gradient, Hessian \& Jacobian --- Recap}
+  \begin{columns}
+    \column{0.33\textwidth}
+    \begin{block}{Gradient}
+      $f:\mathbb{R}^n\to\mathbb{R}$
+      \[
+        \nabla f = \begin{bmatrix}\frac{\partial f}{\partial x_1}\\\vdots\\\frac{\partial f}{\partial x_n}\end{bmatrix}
+      \]
+      Scalar output.\\
+      Steepest ascent direction.
+    \end{block}
+    \column{0.33\textwidth}
+    \begin{block}{Hessian}
+      $f:\mathbb{R}^n\to\mathbb{R}$
+      \[
+        H_{ij} = \frac{\partial^2 f}{\partial x_i \partial x_j}
+      \]
+      Curvature matrix.\\
+      Tells \emph{how far} to trust gradient.
+    \end{block}
+    \column{0.33\textwidth}
+    \begin{block}{Jacobian}
+      $f:\mathbb{R}^n\to\mathbb{R}^m$
+      \[
+        J_{ij} = \frac{\partial f_i}{\partial x_j}
+      \]
+      Generalizes gradient to vector-valued functions.
+    \end{block}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Second-Order Methods (Newton's Method)}
+  \textbf{Idea}: find the step $s$ that minimizes the second-order Taylor expansion.\\[4pt]
+  Differentiate $J(\mathbf{w}_k) + s^T\nabla J + \frac{1}{2}s^T H s$ w.r.t.\ $s$ and set to zero:
+  \[
+    \nabla J + H s = 0 \;\Longrightarrow\; s = -H^{-1}\nabla J
+  \]
+  \[
+    \boxed{\mathbf{w}_{k+1} = \mathbf{w}_k - H^{-1}\nabla J(\mathbf{w}_k)}
+  \]
+  \vspace{0.1cm}
+  \begin{columns}
+    \column{0.5\textwidth}
+    \begin{exampleblock}{Advantages}
+      \begin{itemize}
+        \item Often \textbf{quadratic convergence}
+        \item Second-order approx.\ more accurate
+        \item Gradient gives direction; Hessian gives magnitude
+      \end{itemize}
+    \end{exampleblock}
+    \column{0.45\textwidth}
+    \begin{alertblock}{Disadvantages}
+      \begin{itemize}
+        \item $H$ is $d\times d$ --- huge memory
+        \item $H^{-1}$ costs $O(d^3)$
+        \item Negative eigenvalues (saddle points) cause ascent steps
+        \item Fix: regularize as $(H+\alpha I)^{-1}\nabla J$
+      \end{itemize}
+    \end{alertblock}
+  \end{columns}
+\end{frame}
+
+%==========================================================================
+\section{Summary}
+%==========================================================================
+
+\begin{frame}{Summary}
+  \begin{columns}
+    \column{0.48\textwidth}
+    \begin{block}{Neural Network Foundations}
+      \begin{itemize}
+        \item \textbf{MP Neuron}: threshold logic on Boolean inputs; only linearly separable functions
+        \item \textbf{Perceptron}: weighted inputs + bias + learning; converges if data is linearly separable (proved via $\cos\beta$)
+        \item \textbf{Sigmoid}: smooth probabilistic output enabling gradient flow
+      \end{itemize}
+    \end{block}
+    \column{0.48\textwidth}
+    \begin{block}{Optimization Foundations}
+      \begin{itemize}
+        \item \textbf{Taylor Series}: base for all GD analysis
+        \item \textbf{GD}: non-increasing updates; steepest descent is optimal 1st-order direction
+        \item \textbf{Optimal $\eta$}: from 2nd-order Taylor
+        \item \textbf{Newton's}: faster but costly $H^{-1}$; regularize for saddle points
+      \end{itemize}
+    \end{block}
+  \end{columns}
+  \vspace{0.3cm}
+  \begin{center}
+    \large\textit{``Gradient tells direction; Hessian tells how much to trust it.''}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \Huge{\centerline{Thank You}}
+  \vspace{0.5cm}
+  \large{\centerline{Questions?}}
+\end{frame}
+
+\end{document}

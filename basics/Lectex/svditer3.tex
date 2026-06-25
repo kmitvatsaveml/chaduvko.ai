@@ -1,0 +1,1673 @@
+\documentclass[11pt,oneside]{book}
+
+%====================== PACKAGES ======================
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{mathptmx}              % Times text + math (textbook look)
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{bm}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage[bookmarks,bookmarksnumbered]{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue!55!black,urlcolor=teal,citecolor=blue}
+
+%====================== COLORS ======================
+\definecolor{navy}{HTML}{1F3A5F}
+\definecolor{steel}{HTML}{2E5A88}
+\definecolor{intublue}{HTML}{EAF2FB}
+\definecolor{inturule}{HTML}{3E7CB1}
+\definecolor{warmbg}{HTML}{FFF6E9}
+\definecolor{warmrule}{HTML}{D08B2C}
+\definecolor{keybg}{HTML}{EAF6EE}
+\definecolor{keyrule}{HTML}{2E8B57}
+\definecolor{redbg}{HTML}{FBECEC}
+\definecolor{redrule}{HTML}{B23B3B}
+
+%====================== THEOREM ENVIRONMENTS ======================
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[chapter]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{proposition}[theorem]{Proposition}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{exercise}{Exercise}[chapter]
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+%====================== CALLOUT BOXES ======================
+\newtcolorbox{geometry_box}{enhanced,breakable,colback=intublue,colframe=inturule,
+  boxrule=0.4pt,left=8pt,right=8pt,top=6pt,bottom=6pt,arc=2pt,
+  borderline west={3pt}{0pt}{inturule},fonttitle=\bfseries,title={Geometric interpretation}}
+\newtcolorbox{ml_box}{enhanced,breakable,colback=keybg,colframe=keyrule,
+  boxrule=0.4pt,left=8pt,right=8pt,top=6pt,bottom=6pt,arc=2pt,
+  borderline west={3pt}{0pt}{keyrule},fonttitle=\bfseries,title={Machine-learning interpretation}}
+\newtcolorbox{miscon_box}{enhanced,breakable,colback=redbg,colframe=redrule,
+  boxrule=0.4pt,left=8pt,right=8pt,top=6pt,bottom=6pt,arc=2pt,
+  borderline west={3pt}{0pt}{redrule},fonttitle=\bfseries,title={Common misconception}}
+\newtcolorbox{intuition_box}{enhanced,breakable,colback=warmbg,colframe=warmrule,
+  boxrule=0.4pt,left=8pt,right=8pt,top=6pt,bottom=6pt,arc=2pt,
+  borderline west={3pt}{0pt}{warmrule},fonttitle=\bfseries,title={Motivation \& intuition}}
+
+%====================== MACROS ======================
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\rank}{\operatorname{rank}}
+\newcommand{\col}{\operatorname{col}}
+\newcommand{\row}{\operatorname{row}}
+\newcommand{\nul}{\operatorname{null}}
+\newcommand{\spn}{\operatorname{span}}
+\newcommand{\dimm}{\operatorname{dim}}
+\newcommand{\norm}[1]{\left\lVert #1 \right\rVert}
+\newcommand{\fn}[1]{\norm{#1}_F}
+\newcommand{\sn}[1]{\norm{#1}_2}
+\newcommand{\T}{^{\mathsf T}}
+\newcommand{\inv}{^{-1}}
+\newcommand{\inner}[2]{\langle #1,\, #2\rangle}
+\newcommand{\bu}{\mathbf{u}}
+\newcommand{\bv}{\mathbf{v}}
+\newcommand{\bw}{\mathbf{w}}
+\newcommand{\bx}{\mathbf{x}}
+\newcommand{\by}{\mathbf{y}}
+\newcommand{\bz}{\mathbf{z}}
+\newcommand{\bq}{\mathbf{q}}
+\newcommand{\bp}{\mathbf{p}}
+\newcommand{\ba}{\mathbf{a}}
+\newcommand{\bb}{\mathbf{b}}
+\newcommand{\be}{\mathbf{e}}
+\newcommand{\bzero}{\mathbf{0}}
+\newcommand{\bmu}{\boldsymbol{\mu}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+
+\renewcommand{\qedsymbol}{$\blacksquare$}
+
+%====================== HEADERS ======================
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\nouppercase{\leftmark}}
+\fancyhead[R]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+%====================== TITLE ======================
+\title{\vspace{-2cm}
+  {\color{navy}\Huge\bfseries The Singular Value Decomposition}\\[10pt]
+  {\color{steel}\LARGE A Rigorous Development from First Principles}\\[8pt]
+  {\color{steel}\large culminating in the Eckart--Young--Mirsky Theorem}}
+\author{\Large A self-contained graduate treatment\\[4pt]
+  \normalsize every theorem motivated, every step proved}
+\date{\today}
+
+\begin{document}
+
+\frontmatter
+\maketitle
+
+\chapter*{Preface}
+\addcontentsline{toc}{chapter}{Preface}
+\markboth{Preface}{Preface}
+
+This book develops the Singular Value Decomposition (SVD) and its central optimality
+property --- the \emph{Eckart--Young--Mirsky best rank-$k$ approximation theorem} ---
+in the rigorous, build-everything-from-the-ground-up style of a graduate linear-algebra
+text. The guiding principle is simple and uncompromising:
+
+\begin{center}
+\emph{Nothing is asserted that has not first been proved.}
+\end{center}
+
+We deliberately avoid the phrases ``it is easy to see,'' ``clearly,'' and ``it can be
+shown.'' When a theorem depends on another result, that result is stated and proved
+\emph{first}. The reader is assumed to know only the mechanics of matrix
+multiplication, transpose, inverse, and determinants. Every other object --- span,
+basis, rank, inner product, orthogonal projection, symmetric matrices, the Spectral
+Theorem, positive semidefiniteness, matrix norms --- is introduced from scratch and
+proved before it is used.
+
+Each chapter closes with a \textbf{summary} and a set of \textbf{exercises}. Throughout,
+shaded boxes separate the formal mathematics from \emph{motivation}, \emph{geometric
+interpretation}, \emph{machine-learning interpretation}, and \emph{common
+misconceptions}, so that intuition supports the proofs without ever substituting for
+them.
+
+The logical dependency of the chapters is strictly linear:
+\begin{gather*}
+\text{rank}\ \to\ \text{orthogonality}\ \to\ \text{symmetric matrices}\ \to\
+\text{Spectral Theorem}\\[2pt]
+\to\ \text{PSD}\ \to\ \text{SVD}\ \to\ \text{norms}\ \to\
+\text{Eckart--Young--Mirsky}.
+\end{gather*}
+Read it in order; each chapter is a prerequisite for the next.
+
+\tableofcontents
+
+\mainmatter
+
+%##################################################################
+\chapter{Motivation: Why the SVD Exists}
+%##################################################################
+
+\begin{intuition_box}
+Eigenvalue decomposition is the most powerful tool in elementary linear algebra: it
+turns the action of a matrix into independent scalar stretches along special
+directions. But it has two fatal restrictions --- it needs the matrix to be
+\emph{square}, and even then it may fail to exist (the matrix may not be
+diagonalizable). Data matrices are almost never square, and we cannot afford a tool
+that sometimes does not exist. The SVD is the repair: a decomposition that exists for
+\emph{every} matrix, square or rectangular, and that recovers all the computational
+power of the eigenbasis.
+\end{intuition_box}
+
+\section{The eigenvalue decomposition and its limits}
+
+For a square matrix $A\in\R^{n\times n}$ the eigenvalue equation
+$A\bv=\lambda\bv$ identifies directions $\bv$ along which $A$ acts as pure scaling. When
+$A$ possesses $n$ linearly independent eigenvectors, stacking them as the columns of
+$V$ gives the \emph{eigenvalue decomposition} (EVD)
+\[
+A=V\Lambda V\inv,\qquad \Lambda=\operatorname{diag}(\lambda_1,\dots,\lambda_n),
+\]
+which converts repeated multiplication by $A$ into repeated scalar multiplication. This
+is the engine behind iterative methods, differential equations, and Markov chains.
+
+The decomposition demands two things, and \emph{both} can fail:
+
+\begin{enumerate}[label=(\roman*),leftmargin=2.2em]
+\item \textbf{Squareness.} The equation $A\bv=\lambda\bv$ requires $A\bv$ and $\bv$ to
+lie in the same space. If $A\in\R^{m\times n}$ with $m\ne n$, then $\bv\in\R^n$ but
+$A\bv\in\R^m$, and the equation is not even well posed. Rectangular matrices simply
+\emph{cannot} have eigenvectors.
+\item \textbf{Diagonalizability.} Even square matrices may lack a full set of
+independent eigenvectors. The matrix $\begin{psmallmatrix}1&1\\0&1\end{psmallmatrix}$
+has the single eigenvalue $1$ but only a one-dimensional eigenspace, so no
+$V\inv$ exists.
+\end{enumerate}
+
+\section{What the SVD promises}
+
+The SVD circumvents both problems by abandoning the demand for a \emph{single} basis in
+which $A$ is diagonal. Instead it allows \emph{two} orthonormal bases --- one in the
+input space $\R^n$, one in the output space $\R^m$ --- linked so that $A$ maps one to
+the other with pure scaling in between. We will prove (Chapter~\ref{ch:svd}) that
+\emph{every} real matrix $A\in\R^{m\times n}$ factors as
+\[
+A=U\Sigma V\T,
+\]
+with $U\in\R^{m\times m}$ and $V\in\R^{n\times n}$ orthogonal and $\Sigma$ a
+nonnegative diagonal matrix. No squareness, no diagonalizability hypothesis --- the
+factorization always exists.
+
+\section{Why anyone outside pure mathematics should care}
+
+The SVD is arguably the single most useful matrix factorization in applied science.
+A non-exhaustive list of where its optimality (the subject of Chapter~\ref{ch:ey})
+is doing the work:
+
+\begin{description}[style=nextline,leftmargin=1.6em]
+\item[Principal Component Analysis (PCA).] The directions of maximal variance in a data
+cloud are exactly the right singular vectors of the centred data matrix
+(Chapter~\ref{ch:intuition}). Dimensionality reduction \emph{is} truncated SVD.
+\item[Image compression.] A grayscale image is a matrix of pixel intensities. Because
+its singular values decay rapidly, a few dozen rank-one layers reproduce the picture
+while storing a small fraction of the numbers.
+\item[Latent Semantic Analysis (LSA).] A term--document matrix, truncated by SVD,
+exposes latent ``topics'' as singular directions, mapping synonyms to nearby vectors.
+\item[Recommendation systems.] A user--item rating matrix is modelled as approximately
+low rank; the missing entries are predicted by its best low-rank approximation.
+\item[LoRA (Low-Rank Adaptation).] Fine-tuning updates to enormous neural networks are
+empirically near low rank, so they are stored in factored form $\Delta W=BA$ with $B,A$
+thin --- a direct application of the low-rank idea, slashing trainable parameters by
+orders of magnitude.
+\item[Numerical stability.] The SVD gives the most reliable computation of rank,
+pseudoinverse, and least-squares solutions, precisely because it never forms the
+condition-number-squaring product $A\T A$.
+\end{description}
+
+Each of these rests on the theorem at the heart of this book: among all matrices of
+rank at most $k$, the truncated SVD is provably the closest to $A$. Everything we build
+in Chapters~\ref{ch:rank}--\ref{ch:norms} is in service of proving that statement
+cleanly in Chapter~\ref{ch:ey}.
+
+\section*{Summary}
+\addcontentsline{toc}{section}{Summary}
+EVD is powerful but restricted to square, diagonalizable matrices. The SVD removes both
+restrictions by using paired orthonormal bases in the input and output spaces. It exists
+universally and underlies PCA, compression, LSA, recommender systems, and LoRA. The
+remainder of the book proves the SVD exists and that its truncation is optimal.
+
+\begin{exercise}
+Exhibit a $2\times2$ real matrix that has no real eigenvalues, and verify directly that
+it nonetheless has a real SVD (you may use a computer for the arithmetic; we prove
+existence in general later).
+\end{exercise}
+\begin{exercise}
+Explain in one paragraph why the equation $A\bv=\lambda\bv$ is dimensionally
+inconsistent when $A\in\R^{3\times 5}$.
+\end{exercise}
+\begin{exercise}
+The matrix $\begin{psmallmatrix}2&1\\0&2\end{psmallmatrix}$ is square. Show it has only a
+one-dimensional eigenspace, hence no EVD of the form $V\Lambda V\inv$ with diagonal
+$\Lambda$ exists.
+\end{exercise}
+
+%##################################################################
+\chapter{Linear-Algebra Prerequisites: Rank}\label{ch:rank}
+%##################################################################
+
+We develop only what the SVD requires, but we develop it completely. Throughout,
+vectors are columns and $\R^n$ carries the usual operations.
+
+\section{Linear independence, span, basis, dimension}
+
+\begin{definition}[Linear combination, span]
+A \emph{linear combination} of vectors $\bv_1,\dots,\bv_k\in\R^n$ is any vector
+$\sum_{i=1}^k c_i\bv_i$ with $c_i\in\R$. Their \emph{span} is the set of all such
+combinations,
+$\spn\{\bv_1,\dots,\bv_k\}=\{\sum_i c_i\bv_i: c_i\in\R\}$,
+which is a subspace of $\R^n$.
+\end{definition}
+
+\begin{definition}[Linear independence]
+The vectors $\bv_1,\dots,\bv_k$ are \emph{linearly independent} if the only scalars
+solving $\sum_{i=1}^k c_i\bv_i=\bzero$ are $c_1=\cdots=c_k=0$. Otherwise they are
+\emph{linearly dependent}.
+\end{definition}
+
+\begin{definition}[Basis, dimension]
+A \emph{basis} of a subspace $W\subseteq\R^n$ is a linearly independent set that spans
+$W$. The number of vectors in a basis is the \emph{dimension} $\dimm W$; we take as
+known from elementary linear algebra that every basis of a given subspace has the same
+size, so $\dimm W$ is well defined.
+\end{definition}
+
+\begin{lemma}[Coordinates are unique in a basis]\label{lem:uniquecoord}
+If $\bv_1,\dots,\bv_k$ is a basis of $W$ then every $\bw\in W$ has a \emph{unique}
+representation $\bw=\sum_i c_i\bv_i$.
+\end{lemma}
+\begin{proof}
+Existence holds because the basis spans $W$. For uniqueness, suppose
+$\sum_i c_i\bv_i=\sum_i d_i\bv_i$. Subtracting gives $\sum_i(c_i-d_i)\bv_i=\bzero$, and
+linear independence forces $c_i-d_i=0$ for all $i$, i.e.\ $c_i=d_i$.
+\end{proof}
+
+\section{The four fundamental subspaces and rank}
+
+\begin{definition}[Column space, row space, null space]
+For $A\in\R^{m\times n}$:
+\begin{itemize}[leftmargin=1.5em]
+\item the \emph{column space} $\col(A)=\{A\bx:\bx\in\R^n\}\subseteq\R^m$ is the span of
+the columns of $A$;
+\item the \emph{row space} $\row(A)=\col(A\T)\subseteq\R^n$ is the span of the rows;
+\item the \emph{null space} $\nul(A)=\{\bx\in\R^n:A\bx=\bzero\}\subseteq\R^n$.
+\end{itemize}
+\end{definition}
+
+\begin{definition}[Rank: three candidate definitions]\label{def:rank}
+For $A\in\R^{m\times n}$ define
+\[
+r_{\mathrm{col}}=\dimm\col(A),\qquad
+r_{\mathrm{row}}=\dimm\row(A),\qquad
+r_{\mathrm{fac}}=\min\{k: A=YZ\T,\ Y\in\R^{m\times k},\ Z\in\R^{n\times k}\}.
+\]
+\end{definition}
+
+These three numbers coincide. We prove it, because the equality (``row rank $=$ column
+rank'') is used repeatedly later and should not be taken on faith.
+
+\begin{theorem}[Equivalence of the rank definitions]\label{thm:rankequiv}
+For every $A\in\R^{m\times n}$, $r_{\mathrm{col}}=r_{\mathrm{row}}=r_{\mathrm{fac}}$.
+The common value is the \emph{rank} $\rank(A)$.
+\end{theorem}
+\begin{proof}
+\textbf{Step 1: $r_{\mathrm{col}}=r_{\mathrm{fac}}$.}
+Let $r=r_{\mathrm{col}}$ and pick a basis $\bb_1,\dots,\bb_r$ of $\col(A)$; assemble it
+as the columns of $Y=[\bb_1\ \cdots\ \bb_r]\in\R^{m\times r}$. Each column $\ba_j$ of
+$A$ lies in $\col(A)$, so by Lemma~\ref{lem:uniquecoord} it has coordinates
+$\ba_j=\sum_{i=1}^r z_{ji}\bb_i=Y\bz_j$ where $\bz_j=(z_{j1},\dots,z_{jr})\T$. Stacking
+the $\bz_j$ as rows of a matrix $Z\in\R^{n\times r}$ gives $A=YZ\T$. Hence a
+factorization of inner dimension $r$ exists, so $r_{\mathrm{fac}}\le r$. Conversely, if
+$A=YZ\T$ with $Y\in\R^{m\times k}$ then every column of $A$ is
+$A\be_j=Y(Z\T\be_j)\in\col(Y)$, so $\col(A)\subseteq\col(Y)$ and
+$r_{\mathrm{col}}\le\dimm\col(Y)\le k$. Taking $k=r_{\mathrm{fac}}$ yields
+$r_{\mathrm{col}}\le r_{\mathrm{fac}}$. Combining, $r_{\mathrm{col}}=r_{\mathrm{fac}}$.
+
+\textbf{Step 2: $r_{\mathrm{row}}=r_{\mathrm{fac}}$.}
+Apply Step 1 to $A\T$: its column space is $\row(A)$, and $A\T=Z Y\T$ is a
+factorization of inner dimension $r_{\mathrm{fac}}$ (the same $Y,Z$ as above,
+transposed). Therefore $r_{\mathrm{row}}=\dimm\col(A\T)$ equals the minimal inner
+dimension of a factorization of $A\T$, which is $r_{\mathrm{fac}}$ because transposing a
+factorization of $A$ gives one of $A\T$ of the same inner dimension and vice versa.
+
+Hence all three numbers agree.
+\end{proof}
+
+\begin{remark}
+Theorem~\ref{thm:rankequiv} is the statement, familiar from a first course but rarely
+proved there, that \emph{the maximal number of independent columns equals the maximal
+number of independent rows}. We will use the factorization form
+$A=YZ\T$ (Figure~``long-skinny times short-long'') constantly.
+\end{remark}
+
+\section{Rank-$0$, rank-$1$, rank-$2$, rank-$k$}
+
+\begin{definition}[Rank-$k$ matrix]
+$A$ has rank $k$ if $\rank(A)=k$. Equivalently (Theorem~\ref{thm:rankequiv}) $A$ is a
+sum of $k$ rank-one matrices but not of $k-1$.
+\end{definition}
+
+The only rank-$0$ matrix is the zero matrix. Rank-one matrices have an exceptionally
+clean description, which is the workhorse of the entire theory.
+
+\begin{theorem}[Characterization of rank-one matrices]\label{thm:rank1}
+A matrix $A\in\R^{m\times n}$ has rank $1$ if and only if $A=\bu\bv\T$ for some nonzero
+vectors $\bu\in\R^m$, $\bv\in\R^n$.
+\end{theorem}
+\begin{proof}
+($\Leftarrow$) Suppose $A=\bu\bv\T$ with $\bu,\bv\ne\bzero$. Column $j$ of $A$ is
+$A\be_j=\bu(\bv\T\be_j)=v_j\,\bu$, a scalar multiple of the fixed nonzero vector $\bu$.
+Thus every column lies in $\spn\{\bu\}$, so $\col(A)\subseteq\spn\{\bu\}$, giving
+$\dimm\col(A)\le 1$. Since some $v_j\ne 0$, the column $v_j\bu\ne\bzero$, so $A\ne 0$ and
+$\dimm\col(A)\ge 1$. Hence $\rank(A)=1$.
+
+($\Rightarrow$) Suppose $\rank(A)=1$. Then $\col(A)$ is one-dimensional; let $\bu$ be a
+nonzero spanning vector, so $\col(A)=\spn\{\bu\}$. Each column $\ba_j\in\col(A)$ is a
+multiple $\ba_j=v_j\bu$ for a unique scalar $v_j$ (Lemma~\ref{lem:uniquecoord}). Setting
+$\bv=(v_1,\dots,v_n)\T$ gives, column by column, $A=[\,v_1\bu\ \cdots\ v_n\bu\,]
+=\bu\bv\T$. As $A\ne 0$, $\bv\ne\bzero$.
+\end{proof}
+
+\begin{example}
+$A=\begin{psmallmatrix}2&4&6\\1&2&3\end{psmallmatrix}$ has every row a multiple of
+$(2,4,6)$ and every column a multiple of $(2,1)\T$. Indeed
+$A=\begin{psmallmatrix}2\\1\end{psmallmatrix}\begin{psmallmatrix}1&2&3\end{psmallmatrix}
+=\bu\bv\T$, confirming $\rank(A)=1$.
+\end{example}
+
+\begin{remark}[Rank-two and rank-$k$ as superpositions]
+A rank-two matrix is a sum $\bu_1\bv_1\T+\bu_2\bv_2\T$ that is not itself rank $0$ or
+$1$. In general, Theorem~\ref{thm:rankequiv} says rank-$k$ matrices are exactly the sums
+of $k$ rank-one matrices that cannot be written with fewer. The SVD
+(Chapter~\ref{ch:svd}) will hand us a \emph{canonical} such decomposition in which the
+rank-one pieces are mutually orthogonal and ordered by importance.
+\end{remark}
+
+\begin{ml_box}
+Low rank is the mathematical face of \emph{structure} or \emph{redundancy} in data. A
+rank-one matrix $\bu\bv\T$ is the cleanest possible structure: one ``pattern'' $\bu$
+modulated across columns by the weights in $\bv$. When a data matrix is approximately a
+sum of a few rank-one pieces, it is approximately low rank, and the whole apparatus of
+low-rank approximation (compression, denoising, completion) becomes available.
+\end{ml_box}
+
+\section*{Summary}
+\addcontentsline{toc}{section}{Summary}
+Span, independence, basis, and dimension give meaning to the four fundamental subspaces.
+Rank has three equivalent definitions --- column rank, row rank, and minimal
+factorization dimension --- all proved equal in Theorem~\ref{thm:rankequiv}. Rank-one
+matrices are exactly the outer products $\bu\bv\T$ (Theorem~\ref{thm:rank1}), and
+rank-$k$ matrices are minimal sums of $k$ such products.
+
+\begin{exercise}
+Prove that $\rank(AB)\le\min\{\rank(A),\rank(B)\}$ using the factorization
+characterization $r_{\mathrm{fac}}$.
+\end{exercise}
+\begin{exercise}
+Show that for $A=\bu\bv\T$ (nonzero) the null space has dimension $n-1$, and identify it
+explicitly in terms of $\bv$.
+\end{exercise}
+\begin{exercise}
+Give an example of $2\times2$ matrices with $\rank(A)=\rank(B)=1$ but $\rank(A+B)=2$,
+and another pair with $\rank(A+B)=1$. Conclude that rank is neither additive nor
+subadditive in an exact sense (only the inequality $\rank(A+B)\le\rank A+\rank B$ holds).
+\end{exercise}
+\begin{exercise}
+Prove the inequality $\rank(A+B)\le\rank(A)+\rank(B)$ from Theorem~\ref{thm:rankequiv}.
+\end{exercise}
+
+%##################################################################
+\chapter{Orthogonality}\label{ch:orth}
+%##################################################################
+
+\begin{intuition_box}
+Orthogonality is what makes the SVD \emph{clean}. Without it, decomposing a matrix into
+ingredients would give pieces that overlap and interfere; with it, the pieces are
+mutually perpendicular, energies simply add (Pythagoras), and projecting onto a subspace
+is the optimal way to approximate. Every optimality statement in this book ultimately
+rests on the geometry of right angles.
+\end{intuition_box}
+
+\section{Inner product, norm, orthogonality}
+
+\begin{definition}[Inner product and norm]
+For $\bx,\by\in\R^n$ the \emph{inner (dot) product} is $\inner{\bx}{\by}=\bx\T\by=
+\sum_{i=1}^n x_iy_i$, and the \emph{Euclidean norm} is
+$\norm{\bx}=\sqrt{\inner{\bx}{\bx}}=\bigl(\sum_i x_i^2\bigr)^{1/2}$. Vectors $\bx,\by$
+are \emph{orthogonal}, written $\bx\perp\by$, if $\inner{\bx}{\by}=0$.
+\end{definition}
+
+\begin{proposition}[Basic properties of the inner product]\label{prop:innerprops}
+For all $\bx,\by,\bz\in\R^n$ and $c\in\R$:
+\textup{(i)} symmetry $\inner{\bx}{\by}=\inner{\by}{\bx}$;
+\textup{(ii)} linearity $\inner{c\bx+\bz}{\by}=c\inner{\bx}{\by}+\inner{\bz}{\by}$;
+\textup{(iii)} positivity $\inner{\bx}{\bx}\ge0$ with equality iff $\bx=\bzero$;
+\textup{(iv)} the adjoint identity $\inner{A\bx}{\by}=\inner{\bx}{A\T\by}$ for any
+$A\in\R^{m\times n}$.
+\end{proposition}
+\begin{proof}
+(i)--(iii) are immediate from $\inner{\bx}{\by}=\sum_i x_iy_i$. For (iv),
+$\inner{A\bx}{\by}=(A\bx)\T\by=\bx\T A\T\by=\inner{\bx}{A\T\by}$, using
+$(A\bx)\T=\bx\T A\T$.
+\end{proof}
+
+\begin{theorem}[Cauchy--Schwarz inequality]\label{thm:cs}
+For all $\bx,\by\in\R^n$, $\ |\inner{\bx}{\by}|\le\norm{\bx}\,\norm{\by}$, with equality
+iff $\bx,\by$ are linearly dependent.
+\end{theorem}
+\begin{proof}
+If $\by=\bzero$ both sides are $0$. Otherwise, for every $t\in\R$ positivity gives
+\[
+0\le\norm{\bx-t\by}^2=\inner{\bx-t\by}{\bx-t\by}
+=\norm{\bx}^2-2t\inner{\bx}{\by}+t^2\norm{\by}^2 =: q(t).
+\]
+The quadratic $q(t)$ is nonnegative for all $t$, so its discriminant is $\le0$:
+$4\inner{\bx}{\by}^2-4\norm{\bx}^2\norm{\by}^2\le0$, i.e.\
+$\inner{\bx}{\by}^2\le\norm{\bx}^2\norm{\by}^2$. Taking square roots gives the
+inequality. Equality forces $q(t_0)=0$ for the vertex $t_0$, i.e.\ $\bx=t_0\by$,
+linear dependence; the converse is a direct check.
+\end{proof}
+
+\begin{theorem}[Pythagorean theorem]\label{thm:pyth}
+If $\bx\perp\by$ then $\norm{\bx+\by}^2=\norm{\bx}^2+\norm{\by}^2$.
+\end{theorem}
+\begin{proof}
+$\norm{\bx+\by}^2=\inner{\bx+\by}{\bx+\by}=\norm{\bx}^2+2\inner{\bx}{\by}+\norm{\by}^2$,
+and the middle term vanishes because $\inner{\bx}{\by}=0$.
+\end{proof}
+
+\section{Orthonormal sets and orthogonal matrices}
+
+\begin{definition}[Orthonormal set]
+Vectors $\bq_1,\dots,\bq_k$ are \emph{orthonormal} if $\inner{\bq_i}{\bq_j}=\delta_{ij}$
+(unit length, mutually orthogonal).
+\end{definition}
+
+\begin{proposition}[Orthonormal $\Rightarrow$ independent]\label{prop:orthoindep}
+An orthonormal set is linearly independent.
+\end{proposition}
+\begin{proof}
+Suppose $\sum_i c_i\bq_i=\bzero$. Take the inner product with $\bq_j$:
+$0=\inner{\bzero}{\bq_j}=\sum_i c_i\inner{\bq_i}{\bq_j}=\sum_i c_i\delta_{ij}=c_j$. Thus
+every $c_j=0$.
+\end{proof}
+
+\begin{definition}[Orthogonal matrix]
+A square matrix $Q\in\R^{n\times n}$ is \emph{orthogonal} if $Q\T Q=I$. Equivalently its
+columns are orthonormal.
+\end{definition}
+
+\begin{proposition}[Properties of orthogonal matrices]\label{prop:Qprops}
+Let $Q\in\R^{n\times n}$ be orthogonal. Then
+\textup{(i)} $Q$ is invertible with $Q\inv=Q\T$, hence also $QQ\T=I$ and the rows are
+orthonormal;
+\textup{(ii)} $Q$ preserves inner products: $\inner{Q\bx}{Q\by}=\inner{\bx}{\by}$;
+\textup{(iii)} $Q$ preserves norms: $\norm{Q\bx}=\norm{\bx}$;
+\textup{(iv)} the product of orthogonal matrices is orthogonal.
+\end{proposition}
+\begin{proof}
+(i) $Q\T Q=I$ exhibits $Q\T$ as a left inverse of a square matrix, which is therefore
+the two-sided inverse, so $QQ\T=I$ as well; reading $QQ\T=I$ columnwise says the rows of
+$Q$ are orthonormal. (ii) $\inner{Q\bx}{Q\by}=(Q\bx)\T(Q\by)=\bx\T Q\T Q\by=\bx\T\by
+=\inner{\bx}{\by}$. (iii) Put $\by=\bx$ in (ii) and take square roots. (iv) If
+$Q_1\T Q_1=I=Q_2\T Q_2$ then $(Q_1Q_2)\T(Q_1Q_2)=Q_2\T Q_1\T Q_1Q_2=Q_2\T Q_2=I$.
+\end{proof}
+
+\begin{geometry_box}
+An orthogonal matrix is a \emph{rigid motion} of space: a rotation, a reflection, or a
+combination. It moves points around without ever stretching, shrinking, or shearing.
+Property (iii) is the precise statement that lengths are untouched, and (ii) that angles
+are untouched. This is why orthogonal factors in the SVD carry no ``size'' information ---
+all the scaling lives in the diagonal $\Sigma$.
+\end{geometry_box}
+
+\section{Orthogonal projection onto a subspace}
+
+\begin{definition}[Orthogonal projector]
+Let $W\subseteq\R^m$ be a subspace with orthonormal basis $\bq_1,\dots,\bq_d$, collected
+as columns of $Q\in\R^{m\times d}$ (so $Q\T Q=I_d$). The \emph{orthogonal projector}
+onto $W$ is $P=QQ\T=\sum_{j=1}^d\bq_j\bq_j\T\in\R^{m\times m}$.
+\end{definition}
+
+\begin{proposition}[Defining properties of a projector]\label{prop:projprops}
+With $P=QQ\T$ as above: \textup{(i)} $P\T=P$ (symmetric); \textup{(ii)} $P^2=P$
+(idempotent); \textup{(iii)} $P\bw=\bw$ for $\bw\in W$ and $P\bx=\bzero$ for
+$\bx\perp W$; \textup{(iv)} $P$ does not depend on the choice of orthonormal basis of
+$W$.
+\end{proposition}
+\begin{proof}
+(i) $(QQ\T)\T=QQ\T$. (ii) $P^2=QQ\T QQ\T=Q(Q\T Q)Q\T=QI_dQ\T=QQ\T=P$. (iii) For
+$\bw=Q\mathbf{c}\in W$, $P\bw=QQ\T Q\mathbf{c}=Q\mathbf{c}=\bw$; for $\bx\perp W$ each
+$\bq_j\T\bx=0$, so $Q\T\bx=\bzero$ and $P\bx=\bzero$. (iv) Any $\bx\in\R^m$ splits as
+$\bx=\bw+\bx^\perp$ with $\bw\in W$, $\bx^\perp\perp W$ (existence of such a split is the
+orthogonal decomposition, shown next in Theorem~\ref{thm:bestapprox}); by (iii)
+$P\bx=\bw$, which is determined by $W$ and $\bx$ alone, not by the basis.
+\end{proof}
+
+\begin{theorem}[Best approximation / orthogonal decomposition]\label{thm:bestapprox}
+Let $W\subseteq\R^m$ be a subspace with orthogonal projector $P$. For every
+$\by\in\R^m$:
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2em]
+\item $\by-P\by\perp W$, so $\by=P\by+(\by-P\by)$ is an orthogonal decomposition;
+\item for every $\bw\in W$, $\ \norm{\by-\bw}^2=\norm{\by-P\by}^2+\norm{P\by-\bw}^2$;
+\item consequently $\displaystyle\min_{\bw\in W}\norm{\by-\bw}=\norm{\by-P\by}$, with the
+unique minimizer $\bw=P\by$.
+\end{enumerate}
+\end{theorem}
+\begin{proof}
+(a) For each basis vector $\bq_j$ of $W$,
+$\inner{\by-P\by}{\bq_j}=\inner{\by}{\bq_j}-\inner{QQ\T\by}{\bq_j}
+=\inner{\by}{\bq_j}-(Q\T\by)\T(Q\T\bq_j)$. Now $Q\T\bq_j=\be_j$, so
+$(Q\T\by)\T\be_j=(Q\T\by)_j=\bq_j\T\by=\inner{\by}{\bq_j}$, and the difference is $0$.
+Hence $\by-P\by$ is orthogonal to every basis vector, thus to all of $W$.
+(b) Write $\by-\bw=(\by-P\by)+(P\by-\bw)$. The first summand is $\perp W$ by (a), and
+the second lies in $W$; they are orthogonal, so Pythagoras
+(Theorem~\ref{thm:pyth}) gives the displayed identity.
+(c) In (b) the first term is fixed and the second is $\ge0$, minimized (uniquely) when
+$P\by-\bw=\bzero$, i.e.\ $\bw=P\by$.
+\end{proof}
+
+\begin{corollary}[Matrix Pythagoras]\label{cor:matpyth}
+For any orthogonal projector $P\in\R^{m\times m}$ and any $A\in\R^{m\times n}$,
+\[
+\fn{A}^2=\fn{PA}^2+\fn{(I-P)A}^2 .
+\]
+\end{corollary}
+\begin{proof}
+Apply Theorem~\ref{thm:bestapprox}(b) with $\bw=P\ba_j$ to each column $\ba_j$ of $A$:
+$\norm{\ba_j}^2=\norm{P\ba_j}^2+\norm{\ba_j-P\ba_j}^2$. The Frobenius norm squared is the
+sum of squared column norms (proved in Chapter~\ref{ch:norms}, but here we only use the
+definition $\fn{A}^2=\sum_j\norm{\ba_j}^2$), so summing over $j$ gives the claim, noting
+$(I-P)\ba_j=\ba_j-P\ba_j$.
+\end{proof}
+
+\begin{miscon_box}
+``Projection just means dropping the last coordinates.'' That is only true when $W$ is a
+coordinate subspace and the basis is the standard one. In general the projector is
+$P=QQ\T$ for an orthonormal basis $Q$ of $W$; it is the \emph{nearest-point map} onto
+$W$, and the direction ``dropped'' is the orthogonal complement of $W$, not any fixed
+set of axes.
+\end{miscon_box}
+
+\section*{Summary}
+\addcontentsline{toc}{section}{Summary}
+Inner products give length, angle, Cauchy--Schwarz (Theorem~\ref{thm:cs}), and Pythagoras
+(Theorem~\ref{thm:pyth}). Orthonormal sets are automatically independent
+(Proposition~\ref{prop:orthoindep}); orthogonal matrices preserve all geometry
+(Proposition~\ref{prop:Qprops}). The orthogonal projector $P=QQ\T$ realizes the
+nearest-point map (Theorem~\ref{thm:bestapprox}), and the matrix Pythagoras identity
+(Corollary~\ref{cor:matpyth}) will drive the optimality proof in Chapter~\ref{ch:ey}.
+
+\begin{exercise}
+Prove the triangle inequality $\norm{\bx+\by}\le\norm{\bx}+\norm{\by}$ from
+Cauchy--Schwarz.
+\end{exercise}
+\begin{exercise}
+Show that a square matrix preserves all norms (i.e.\ $\norm{Q\bx}=\norm{\bx}$ for all
+$\bx$) if and only if it is orthogonal. \emph{Hint:} polarization recovers the inner
+product from the norm.
+\end{exercise}
+\begin{exercise}
+Let $P$ be symmetric and idempotent ($P\T=P=P^2$). Prove $P$ is the orthogonal projector
+onto $\col(P)$, and that $I-P$ is the projector onto $\col(P)^\perp$.
+\end{exercise}
+\begin{exercise}
+Compute the projector onto $W=\spn\{(1,1,0)\T,(0,1,1)\T\}\subseteq\R^3$ by first
+orthonormalizing the basis (Gram--Schmidt), then forming $QQ\T$.
+\end{exercise}
+
+%##################################################################
+\chapter{Symmetric Matrices}\label{ch:sym}
+%##################################################################
+
+\begin{intuition_box}
+The SVD will be manufactured out of the symmetric matrices $A\T A$ and $AA\T$. Symmetric
+matrices are the best-behaved objects in linear algebra: their eigenvalues are real,
+their eigenvectors can be chosen orthonormal, and they are diagonalized by an
+\emph{orthogonal} change of basis. This chapter proves the two facts we need and the
+next chapter assembles them into the Spectral Theorem.
+\end{intuition_box}
+
+\begin{definition}[Symmetric matrix]
+$A\in\R^{n\times n}$ is \emph{symmetric} if $A\T=A$, i.e.\ $a_{ij}=a_{ji}$ for all
+$i,j$.
+\end{definition}
+
+\begin{lemma}[Symmetry is self-adjointness]\label{lem:selfadj}
+$A$ is symmetric iff $\inner{A\bx}{\by}=\inner{\bx}{A\by}$ for all $\bx,\by\in\R^n$.
+\end{lemma}
+\begin{proof}
+By Proposition~\ref{prop:innerprops}(iv), $\inner{A\bx}{\by}=\inner{\bx}{A\T\by}$ always.
+If $A=A\T$ this equals $\inner{\bx}{A\by}$. Conversely, if
+$\inner{\bx}{A\T\by}=\inner{\bx}{A\by}$ for all $\bx,\by$ then
+$\inner{\bx}{(A\T-A)\by}=0$ for all $\bx$, forcing $(A\T-A)\by=\bzero$ for all $\by$,
+hence $A\T=A$.
+\end{proof}
+
+\begin{theorem}[Real eigenvalues]\label{thm:realeig}
+Every eigenvalue of a real symmetric matrix $A$ is real, and a corresponding eigenvector
+may be taken real.
+\end{theorem}
+\begin{proof}
+Allow complex vectors and use the Hermitian inner product
+$\inner{\bx}{\by}_{\C}=\bar\bx\T\by$. Suppose $A\bz=\lambda\bz$ with $\bz\ne\bzero$,
+$\lambda\in\C$. Then
+\[
+\bar\bz\T A\bz=\lambda\,\bar\bz\T\bz=\lambda\norm{\bz}^2 .
+\]
+Taking the conjugate transpose of the scalar $\bar\bz\T A\bz$ and using $A$ real
+symmetric ($\bar A=A$, $A\T=A$),
+\[
+\overline{\bar\bz\T A\bz}=\bz\T A\bar\bz=(\,\overline{A\bz}\,)\T\bz
+=\overline{\lambda}\,\bar\bz\T\bz=\overline{\lambda}\norm{\bz}^2 .
+\]
+A scalar equals its own conjugate, so $\lambda\norm{\bz}^2=\overline\lambda\norm{\bz}^2$;
+since $\norm{\bz}^2>0$, $\lambda=\overline\lambda$, i.e.\ $\lambda\in\R$. With $\lambda$
+real, $(A-\lambda I)$ is a real singular matrix, so it has a real null vector, providing
+a real eigenvector.
+\end{proof}
+
+\begin{theorem}[Orthogonality of eigenvectors for distinct eigenvalues]\label{thm:eigorth}
+If $A$ is symmetric and $A\bx=\lambda\bx$, $A\by=\mu\by$ with $\lambda\ne\mu$, then
+$\bx\perp\by$.
+\end{theorem}
+\begin{proof}
+Using Lemma~\ref{lem:selfadj} two ways,
+\[
+\lambda\inner{\bx}{\by}=\inner{\lambda\bx}{\by}=\inner{A\bx}{\by}
+=\inner{\bx}{A\by}=\inner{\bx}{\mu\by}=\mu\inner{\bx}{\by}.
+\]
+Hence $(\lambda-\mu)\inner{\bx}{\by}=0$. As $\lambda\ne\mu$, $\inner{\bx}{\by}=0$.
+\end{proof}
+
+\begin{remark}
+Theorem~\ref{thm:eigorth} handles \emph{distinct} eigenvalues. When an eigenvalue is
+repeated, its eigenspace is multi-dimensional and we are free to \emph{choose} an
+orthonormal basis within it (Gram--Schmidt). The Spectral Theorem of the next chapter
+packages both cases into a single orthonormal eigenbasis of all of $\R^n$.
+\end{remark}
+
+\section*{Summary}
+\addcontentsline{toc}{section}{Summary}
+Symmetry equals self-adjointness (Lemma~\ref{lem:selfadj}). Real symmetric matrices have
+real eigenvalues (Theorem~\ref{thm:realeig}) and orthogonal eigenvectors across distinct
+eigenvalues (Theorem~\ref{thm:eigorth}). These are exactly the ingredients the Spectral
+Theorem needs.
+
+\begin{exercise}
+Show that if $A$ is symmetric then $\bx\T A\bx$ is real for all real $\bx$ (trivially),
+and that $\bx\T A\bx=\sum_{i}\lambda_i(\bq_i\T\bx)^2$ once the Spectral Theorem is
+available.
+\end{exercise}
+\begin{exercise}
+Give a $2\times2$ \emph{non}-symmetric matrix with complex eigenvalues, illustrating that
+Theorem~\ref{thm:realeig} genuinely uses symmetry.
+\end{exercise}
+\begin{exercise}
+Prove that for symmetric $A$, eigenvectors from a repeated eigenvalue need not be
+orthogonal as given, but can always be \emph{re}chosen orthonormal.
+\end{exercise}
+
+%##################################################################
+\chapter{The Spectral Theorem}\label{ch:spectral}
+%##################################################################
+
+\begin{intuition_box}
+The Spectral Theorem is the climax of the symmetric-matrix story and the foundation of
+the SVD. It says a symmetric matrix is, after an orthogonal change of coordinates, simply
+a diagonal matrix: it stretches space along $n$ mutually perpendicular axes, each by a
+real factor, with no rotation mixing the axes. We prove it in full, by induction, using
+nothing beyond the previous chapter and the fact that a continuous function on a compact
+set attains its maximum.
+\end{intuition_box}
+
+\section{Statement}
+
+\begin{theorem}[Spectral Theorem for real symmetric matrices]\label{thm:spectral}
+Let $A\in\R^{n\times n}$ be symmetric. Then there exist an orthogonal matrix
+$Q=[\bq_1\ \cdots\ \bq_n]$ and real numbers $\lambda_1\ge\lambda_2\ge\cdots\ge\lambda_n$
+such that
+\[
+A=Q\Lambda Q\T=\sum_{i=1}^n\lambda_i\,\bq_i\bq_i\T,\qquad
+\Lambda=\operatorname{diag}(\lambda_1,\dots,\lambda_n),\qquad A\bq_i=\lambda_i\bq_i .
+\]
+That is, $A$ has an orthonormal basis of eigenvectors with real eigenvalues.
+\end{theorem}
+
+\section{A lemma: a maximizer of the Rayleigh quotient is an eigenvector}
+
+\begin{lemma}[Existence of a real eigenpair]\label{lem:rayleigh}
+Let $A\in\R^{n\times n}$ be symmetric. The function $\bx\mapsto\bx\T A\bx$ attains a
+maximum on the unit sphere $S=\{\bx:\norm{\bx}=1\}$ at some $\bq\in S$, and that
+maximizer satisfies $A\bq=\lambda\bq$ with $\lambda=\bq\T A\bq$.
+\end{lemma}
+\begin{proof}
+The map $\bx\mapsto\bx\T A\bx$ is a polynomial, hence continuous, and $S$ is closed and
+bounded (compact); therefore the maximum is attained at some $\bq\in S$, with value
+$\lambda=\bq\T A\bq$. We show $\bq$ is an eigenvector by a first-order (Lagrange)
+argument made elementary. Let $\bv$ be any vector with $\bv\perp\bq$, and consider the
+unit-speed curve $\bx(t)=\cos(t)\,\bq+\sin(t)\,\hat\bv$ on $S$, where
+$\hat\bv=\bv/\norm{\bv}$ (so $\norm{\bx(t)}=1$). Define $g(t)=\bx(t)\T A\bx(t)$. Since
+$t=0$ maximizes $g$, $g'(0)=0$. Compute, using symmetry so that
+$\tfrac{d}{dt}\bx\T A\bx=2\,\bx\T A\dot\bx$:
+\[
+g'(t)=2\,\bx(t)\T A\,\dot\bx(t),\qquad \dot\bx(0)=\hat\bv,\quad \bx(0)=\bq,
+\]
+so $0=g'(0)=2\,\bq\T A\hat\bv=2\inner{A\bq}{\hat\bv}$. Thus $A\bq\perp\bv$ for
+\emph{every} $\bv\perp\bq$, which means $A\bq$ has no component orthogonal to $\bq$:
+$A\bq\in\spn\{\bq\}$, say $A\bq=\lambda\bq$. Finally $\lambda=\bq\T A\bq$ by taking the
+inner product with $\bq$.
+\end{proof}
+
+\section{Proof of the Spectral Theorem}
+
+\begin{proof}[Proof of Theorem~\ref{thm:spectral}]
+We induct on $n$. For $n=1$ every $1\times1$ matrix is diagonal and the claim is trivial
+with $Q=[1]$.
+
+Assume the theorem for dimension $n-1$. Given symmetric $A\in\R^{n\times n}$,
+Lemma~\ref{lem:rayleigh} supplies a unit eigenvector $\bq_1$ with real eigenvalue
+$\lambda_1=\bq_1\T A\bq_1$, chosen as the \emph{maximal} value of the Rayleigh quotient.
+Let $W=\bq_1^\perp=\{\bx:\bq_1\T\bx=0\}$, an $(n-1)$-dimensional subspace.
+
+\emph{$W$ is $A$-invariant.} If $\bx\in W$ then, using symmetry
+(Lemma~\ref{lem:selfadj}),
+\[
+\inner{\bq_1}{A\bx}=\inner{A\bq_1}{\bx}=\lambda_1\inner{\bq_1}{\bx}=0,
+\]
+so $A\bx\in W$. Choose an orthonormal basis $\bw_2,\dots,\bw_n$ of $W$ and form the
+orthogonal matrix $R=[\bq_1\ \bw_2\ \cdots\ \bw_n]$. Because $W$ is $A$-invariant and
+$\bq_1$ is an eigenvector, the matrix of $A$ in this basis is block diagonal:
+\[
+R\T A R=\begin{bmatrix}\lambda_1 & \bzero\T\\ \bzero & A'\end{bmatrix},
+\]
+where $A'\in\R^{(n-1)\times(n-1)}$ represents $A|_W$. The off-diagonal blocks vanish:
+the top row is $\bq_1\T A\bw_j=\lambda_1\bq_1\T\bw_j=0$, and the first column is
+$\bw_j\T A\bq_1=\lambda_1\bw_j\T\bq_1=0$. Moreover $A'$ is symmetric, since
+$R\T A R$ is symmetric ($A$ is) and a principal submatrix of a symmetric matrix is
+symmetric.
+
+By the inductive hypothesis $A'=Q'\Lambda'Q'^{\T}$ with $Q'$ orthogonal and $\Lambda'$
+real diagonal. Set
+\[
+Q=R\begin{bmatrix}1 & \bzero\T\\ \bzero & Q'\end{bmatrix}.
+\]
+Then $Q$ is a product of orthogonal matrices, hence orthogonal
+(Proposition~\ref{prop:Qprops}(iv)), and
+\[
+Q\T A Q=\begin{bmatrix}1&\bzero\T\\\bzero&Q'^{\T}\end{bmatrix}
+(R\T A R)
+\begin{bmatrix}1&\bzero\T\\\bzero&Q'\end{bmatrix}
+=\begin{bmatrix}\lambda_1&\bzero\T\\\bzero&Q'^{\T}A'Q'\end{bmatrix}
+=\begin{bmatrix}\lambda_1&\bzero\T\\\bzero&\Lambda'\end{bmatrix}=:\Lambda,
+\]
+a real diagonal matrix. Hence $A=Q\Lambda Q\T$. Reordering the columns of $Q$ and the
+diagonal of $\Lambda$ so that $\lambda_1\ge\cdots\ge\lambda_n$ keeps $Q$ orthogonal and
+completes the induction.
+\end{proof}
+
+\begin{corollary}[Orthogonal diagonalization and the variational characterization]
+\label{cor:rayleigh}
+With the ordering $\lambda_1\ge\cdots\ge\lambda_n$ of Theorem~\ref{thm:spectral},
+\[
+\lambda_1=\max_{\norm{\bx}=1}\bx\T A\bx,\qquad
+\lambda_n=\min_{\norm{\bx}=1}\bx\T A\bx,
+\]
+and for any $\bx$, writing $\bx=\sum_i c_i\bq_i$ with $c_i=\bq_i\T\bx$,
+\[
+\bx\T A\bx=\sum_{i=1}^n\lambda_i c_i^2,\qquad \norm{\bx}^2=\sum_i c_i^2 .
+\]
+\end{corollary}
+\begin{proof}
+The expansions follow from $A\bq_i=\lambda_i\bq_i$ and orthonormality. The extremal
+statements follow because $\sum_i\lambda_i c_i^2$ is a weighted average of the
+$\lambda_i$ with weights $c_i^2\ge0$ summing to $\norm{\bx}^2=1$, maximized by putting
+all weight on the largest $\lambda_1$ (achieved at $\bx=\bq_1$) and minimized at
+$\bq_n$.
+\end{proof}
+
+\begin{geometry_box}
+Theorem~\ref{thm:spectral} says: rotate space by $Q\T$ so that the eigenvectors become
+the coordinate axes; in those coordinates $A$ is the diagonal matrix $\Lambda$, pure
+axiswise scaling; then rotate back by $Q$. A symmetric matrix is a stretch along $n$
+perpendicular axes --- nothing more.
+\end{geometry_box}
+
+\section*{Summary}
+\addcontentsline{toc}{section}{Summary}
+A maximizer of the Rayleigh quotient on the unit sphere is an eigenvector
+(Lemma~\ref{lem:rayleigh}); deflating onto its orthogonal complement, which is
+$A$-invariant, and inducting proves the Spectral Theorem
+(Theorem~\ref{thm:spectral}): every real symmetric matrix is orthogonally diagonalizable
+with real eigenvalues. Corollary~\ref{cor:rayleigh} records the variational
+characterization that we will generalize (Ky Fan) in Chapter~\ref{ch:ey}.
+
+\begin{exercise}
+Prove the \emph{min--max} (Courant--Fischer) formula for $\lambda_k$ as a corollary of
+the Spectral Theorem.
+\end{exercise}
+\begin{exercise}
+Show $\tr(A)=\sum_i\lambda_i$ and $\det(A)=\prod_i\lambda_i$ for symmetric $A$.
+\end{exercise}
+\begin{exercise}
+Diagonalize $A=\begin{psmallmatrix}2&1\\1&2\end{psmallmatrix}$ orthogonally and verify
+$A=Q\Lambda Q\T$ explicitly.
+\end{exercise}
+
+%##################################################################
+\chapter{Positive Semidefinite Matrices}\label{ch:psd}
+%##################################################################
+
+\begin{intuition_box}
+The SVD is built from $A\T A$ and $AA\T$. These are not arbitrary symmetric matrices ---
+they are \emph{positive semidefinite}, which forces their eigenvalues to be
+\emph{nonnegative}. That nonnegativity is exactly what lets us take square roots and
+define the singular values $\sigma_i=\sqrt{\lambda_i}$. This short chapter proves the
+three facts the SVD construction will quote verbatim.
+\end{intuition_box}
+
+\begin{definition}[Positive semidefinite]
+A symmetric matrix $M\in\R^{n\times n}$ is \emph{positive semidefinite} (PSD), written
+$M\succeq0$, if $\bx\T M\bx\ge0$ for all $\bx\in\R^n$. It is \emph{positive definite}
+($M\succ0$) if $\bx\T M\bx>0$ for all $\bx\ne\bzero$.
+\end{definition}
+
+\begin{proposition}[$A\T A$ and $AA\T$ are symmetric]\label{prop:gramsym}
+For any $A\in\R^{m\times n}$, both $A\T A\in\R^{n\times n}$ and $AA\T\in\R^{m\times m}$
+are symmetric.
+\end{proposition}
+\begin{proof}
+$(A\T A)\T=A\T(A\T)\T=A\T A$, using $(XY)\T=Y\T X\T$ and $(A\T)\T=A$. Likewise
+$(AA\T)\T=(A\T)\T A\T=AA\T$.
+\end{proof}
+
+\begin{proposition}[$A\T A$ and $AA\T$ are PSD]\label{prop:grampsd}
+For any $A\in\R^{m\times n}$, $A\T A\succeq0$ and $AA\T\succeq0$. Hence (by the Spectral
+Theorem) all their eigenvalues are $\ge0$.
+\end{proposition}
+\begin{proof}
+For any $\bx\in\R^n$, $\bx\T(A\T A)\bx=(A\bx)\T(A\bx)=\norm{A\bx}^2\ge0$, so
+$A\T A\succeq0$. Replacing $A$ by $A\T$ gives $AA\T\succeq0$. If $M\bq=\lambda\bq$ with
+$\norm{\bq}=1$ and $M\succeq0$, then $\lambda=\bq\T M\bq\ge0$.
+\end{proof}
+
+\begin{proposition}[Shared nonzero spectrum of $A\T A$ and $AA\T$]\label{prop:sharedspec}
+The matrices $A\T A$ and $AA\T$ have the same nonzero eigenvalues, with the same
+multiplicities. Specifically, if $A\T A\,\bv=\lambda\bv$ with $\lambda\ne0$, then
+$\bu:=A\bv$ satisfies $AA\T\bu=\lambda\bu$ and $\bu\ne\bzero$.
+\end{proposition}
+\begin{proof}
+From $A\T A\bv=\lambda\bv$, left-multiply by $A$:
+$AA\T(A\bv)=A(A\T A\bv)=A(\lambda\bv)=\lambda(A\bv)$, i.e.\ $AA\T\bu=\lambda\bu$.
+Moreover $\norm{A\bv}^2=\bv\T A\T A\bv=\lambda\norm{\bv}^2\ne0$, so $\bu=A\bv\ne\bzero$.
+The map $\bv\mapsto A\bv$ thus carries each $\lambda$-eigenvector of $A\T A$ to a
+$\lambda$-eigenvector of $AA\T$; it is injective on that eigenspace (if $A\bv=\bzero$
+then $\lambda\bv=A\T A\bv=\bzero$ forces $\bv=\bzero$), so multiplicities match. By
+symmetry of roles, the correspondence is a bijection on nonzero eigenspaces.
+\end{proof}
+
+\begin{ml_box}
+Proposition~\ref{prop:grampsd} is the reason PCA works at all: the covariance matrix
+$\Sigma=\tfrac1m X_c\T X_c$ is of the form $A\T A$, hence symmetric PSD, hence has real
+nonnegative eigenvalues $\lambda_i\ge0$ that we interpret as \emph{variances}. A negative
+variance would be nonsense; PSD-ness guarantees it never happens.
+Proposition~\ref{prop:sharedspec} is the engine of the ``Gram-matrix trick'': when there
+are far fewer samples than features, one eigendecomposes the small $m\times m$ matrix
+$AA\T$ and transfers the eigenvectors to the large space via $\bv\mapsto A\bv$.
+\end{ml_box}
+
+\section*{Summary}
+\addcontentsline{toc}{section}{Summary}
+$A\T A$ and $AA\T$ are always symmetric (Proposition~\ref{prop:gramsym}) and PSD
+(Proposition~\ref{prop:grampsd}), so their eigenvalues are real and nonnegative ---
+permitting the square roots $\sigma_i=\sqrt{\lambda_i}$ that define singular values. The
+two products share their nonzero spectrum (Proposition~\ref{prop:sharedspec}), the link
+that will tie left and right singular vectors together.
+
+\begin{exercise}
+Prove $A\T A\succ0$ (positive \emph{definite}) iff $A$ has linearly independent columns
+(equivalently $\nul(A)=\{\bzero\}$).
+\end{exercise}
+\begin{exercise}
+Show that $M\succeq0$ iff $M=B\T B$ for some matrix $B$. \emph{Hint:} use the Spectral
+Theorem to build $B=\Lambda^{1/2}Q\T$.
+\end{exercise}
+\begin{exercise}
+For $A=\begin{psmallmatrix}3&0\\4&5\end{psmallmatrix}$, compute $A\T A$ and $AA\T$ and
+verify they share the eigenvalues $\{45,5\}$.
+\end{exercise}
+
+%##################################################################
+\chapter{Derivation of the Singular Value Decomposition}\label{ch:svd}
+%##################################################################
+
+\begin{intuition_box}
+We now \emph{build} the SVD; we do not assume it. The plan: $A\T A$ is symmetric PSD
+(Chapter~\ref{ch:psd}), so the Spectral Theorem (Chapter~\ref{ch:spectral}) gives it an
+orthonormal eigenbasis with nonnegative eigenvalues. We declare those eigenvectors to be
+the right singular vectors, the square roots of the eigenvalues to be the singular
+values, and we \emph{derive} the left singular vectors as the normalized images
+$A\bv_i/\sigma_i$. Verifying orthonormality of the left vectors and reassembling proves
+$A=U\Sigma V\T$. Because the construction only ever uses the Spectral Theorem applied to
+a matrix that always exists, the SVD always exists.
+\end{intuition_box}
+
+\section{Construction}
+
+\begin{theorem}[Existence of the SVD]\label{thm:svdexist}
+Every $A\in\R^{m\times n}$ admits a factorization
+\[
+A=U\Sigma V\T,
+\]
+where $U\in\R^{m\times m}$ and $V\in\R^{n\times n}$ are orthogonal and
+$\Sigma\in\R^{m\times n}$ has entries $\Sigma_{ii}=\sigma_i\ge0$ for
+$i=1,\dots,\min(m,n)$ and zeros off the diagonal, with
+$\sigma_1\ge\sigma_2\ge\cdots\ge\sigma_r>0=\sigma_{r+1}=\cdots$, where $r=\rank(A)$.
+\end{theorem}
+\begin{proof}
+\textbf{Right singular vectors and singular values.}
+By Propositions~\ref{prop:gramsym}--\ref{prop:grampsd}, $A\T A\in\R^{n\times n}$ is
+symmetric PSD. The Spectral Theorem (Theorem~\ref{thm:spectral}) gives an orthonormal
+basis $\bv_1,\dots,\bv_n$ of $\R^n$ with
+\[
+A\T A\,\bv_i=\lambda_i\bv_i,\qquad \lambda_1\ge\cdots\ge\lambda_n\ge0 .
+\]
+Define $\sigma_i=\sqrt{\lambda_i}\ge0$. Let $r$ be the number of strictly positive
+$\sigma_i$ (we show $r=\rank A$ below). Set $V=[\bv_1\ \cdots\ \bv_n]$, orthogonal.
+
+\textbf{Left singular vectors.}
+For $i=1,\dots,r$ (so $\sigma_i>0$) define
+\[
+\bu_i:=\frac{1}{\sigma_i}A\bv_i\in\R^m .
+\]
+These are orthonormal: for $i,j\le r$,
+\[
+\bu_i\T\bu_j=\frac{1}{\sigma_i\sigma_j}(A\bv_i)\T(A\bv_j)
+=\frac{1}{\sigma_i\sigma_j}\bv_i\T(A\T A\bv_j)
+=\frac{\lambda_j}{\sigma_i\sigma_j}\bv_i\T\bv_j
+=\frac{\sigma_j^2}{\sigma_i\sigma_j}\delta_{ij}
+=\frac{\sigma_j}{\sigma_i}\delta_{ij}=\delta_{ij}.
+\]
+Extend $\bu_1,\dots,\bu_r$ to an orthonormal basis $\bu_1,\dots,\bu_m$ of $\R^m$
+(Gram--Schmidt on any completion), and set $U=[\bu_1\ \cdots\ \bu_m]$, orthogonal.
+
+\textbf{The annihilated directions.}
+For $i>r$ we have $\lambda_i=0$, so
+$\norm{A\bv_i}^2=\bv_i\T A\T A\bv_i=\lambda_i=0$, hence $A\bv_i=\bzero$.
+
+\textbf{Reassembly.}
+Define $\Sigma\in\R^{m\times n}$ by $\Sigma_{ii}=\sigma_i$ and zeros elsewhere. We verify
+$A=U\Sigma V\T$ by checking both sides agree on the basis $\bv_1,\dots,\bv_n$ (two linear
+maps equal on a basis are equal, Lemma~\ref{lem:uniquecoord}). The right side sends
+\[
+(U\Sigma V\T)\bv_j=U\Sigma\be_j=U(\sigma_j\be_j)=\sigma_j\bu_j\quad(j\le r),\qquad
+(U\Sigma V\T)\bv_j=\sigma_j\bu_j=\bzero\quad(j>r,\ \sigma_j=0),
+\]
+using $V\T\bv_j=\be_j$. The left side sends $A\bv_j=\sigma_j\bu_j$ for $j\le r$ (by
+definition of $\bu_j$) and $A\bv_j=\bzero$ for $j>r$. The two maps agree on the basis,
+so $A=U\Sigma V\T$.
+
+\textbf{$r=\rank A$.}
+From $A=U\Sigma V\T$ with $U,V$ invertible, $\rank(A)=\rank(\Sigma)$ (multiplying by
+invertible matrices preserves rank, Exercise), and $\Sigma$ has exactly $r$ nonzero
+entries on its diagonal, so $\rank(\Sigma)=r$.
+\end{proof}
+
+\begin{corollary}[Outer-product / dyadic form]\label{cor:dyadic}
+With the notation of Theorem~\ref{thm:svdexist},
+\[
+A=\sum_{i=1}^{r}\sigma_i\,\bu_i\bv_i\T .
+\]
+Each $\bu_i\bv_i\T$ is rank one (Theorem~\ref{thm:rank1}) and the terms are ordered by
+$\sigma_1\ge\cdots\ge\sigma_r>0$.
+\end{corollary}
+\begin{proof}
+Multiplying out $U\Sigma V\T$ keeps only the $r$ nonzero diagonal entries of $\Sigma$,
+each pairing column $\bu_i$ of $U$ with row $\bv_i\T$ of $V\T$, weighted by $\sigma_i$.
+\end{proof}
+
+\begin{corollary}[$U$ and $V$ as eigenvectors; the EVD link]\label{cor:evdlink}
+The columns of $V$ are orthonormal eigenvectors of $A\T A$ with eigenvalues $\sigma_i^2$,
+and the columns of $U$ are orthonormal eigenvectors of $AA\T$ with the same nonzero
+eigenvalues:
+\[
+A\T A=V\Sigma\T\Sigma V\T,\qquad AA\T=U\Sigma\Sigma\T U\T .
+\]
+\end{corollary}
+\begin{proof}
+$A\T A=(U\Sigma V\T)\T(U\Sigma V\T)=V\Sigma\T U\T U\Sigma V\T=V(\Sigma\T\Sigma)V\T$,
+using $U\T U=I$. This is the orthogonal diagonalization of $A\T A$, so the columns of $V$
+are its eigenvectors with eigenvalues $(\Sigma\T\Sigma)_{ii}=\sigma_i^2$. Symmetrically
+$AA\T=U(\Sigma\Sigma\T)U\T$.
+\end{proof}
+
+\section{Full, reduced, and compact SVD}
+
+\begin{definition}[Three forms]\label{def:svdforms}
+Let $r=\rank A$.
+\begin{itemize}[leftmargin=1.6em]
+\item \textbf{Full SVD:} $A=U\Sigma V\T$ with $U\in\R^{m\times m}$,
+$V\in\R^{n\times n}$ orthogonal and $\Sigma\in\R^{m\times n}$.
+\item \textbf{Reduced (thin) SVD:} keep the first $\min(m,n)$ columns of $U$ and the
+corresponding block of $\Sigma$.
+\item \textbf{Compact SVD:} keep only the $r$ columns with $\sigma_i>0$:
+$A=U_r\Sigma_r V_r\T$, $U_r\in\R^{m\times r}$, $\Sigma_r\in\R^{r\times r}$
+(invertible diagonal), $V_r\in\R^{n\times r}$, $U_r\T U_r=I_r=V_r\T V_r$.
+\end{itemize}
+\end{definition}
+
+\begin{proposition}[The four fundamental subspaces from the SVD]\label{prop:foursub}
+With the compact SVD $A=U_r\Sigma_r V_r\T$,
+\[
+\col(A)=\spn\{\bu_1,\dots,\bu_r\},\qquad
+\nul(A\T)=\spn\{\bu_{r+1},\dots,\bu_m\},
+\]
+\[
+\row(A)=\spn\{\bv_1,\dots,\bv_r\},\qquad
+\nul(A)=\spn\{\bv_{r+1},\dots,\bv_n\}.
+\]
+\end{proposition}
+\begin{proof}
+$A\bx=\sum_{i\le r}\sigma_i(\bv_i\T\bx)\bu_i$ lies in $\spn\{\bu_i\}_{i\le r}$, and every
+$\bu_i$ ($i\le r$) is attained (take $\bx=\bv_i$), so $\col(A)=\spn\{\bu_i\}_{i\le r}$.
+For the null space, $A\bx=\bzero$ iff $\sigma_i(\bv_i\T\bx)=0$ for all $i\le r$ iff
+$\bv_i\T\bx=0$ for $i\le r$ (as $\sigma_i>0$), i.e.\ $\bx\in\spn\{\bv_i\}_{i>r}$. The
+$A\T$ statements follow by applying these to $A\T=V\Sigma\T U\T$.
+\end{proof}
+
+\section{Uniqueness}
+
+\begin{theorem}[Uniqueness of the SVD]\label{thm:svduniq}
+The singular values $\sigma_1\ge\cdots\ge\sigma_r>0$ are uniquely determined by $A$
+(they are the square roots of the nonzero eigenvalues of $A\T A$). If the nonzero
+singular values are \emph{distinct}, then each pair $(\bu_i,\bv_i)$ is unique up to a
+common sign $(\bu_i,\bv_i)\mapsto(-\bu_i,-\bv_i)$. If a singular value is repeated, the
+corresponding singular vectors are determined only up to an orthonormal rotation within
+the shared eigenspace.
+\end{theorem}
+\begin{proof}
+The $\sigma_i^2$ are the eigenvalues of the matrix $A\T A$, which depends only on $A$;
+eigenvalues are unique, so the $\sigma_i$ are. For a simple (multiplicity-one) eigenvalue
+$\sigma_i^2$ of $A\T A$, the eigenspace is one-dimensional, so $\bv_i$ is determined up
+to sign; then $\bu_i=A\bv_i/\sigma_i$ inherits the same sign choice, giving the common
+sign freedom. For a repeated eigenvalue, the Spectral Theorem only fixes the eigenspace,
+within which any orthonormal basis is admissible; the relation $\bu_i=A\bv_i/\sigma_i$
+transports that freedom to the $\bu_i$.
+\end{proof}
+
+\begin{example}[A complete $2\times2$ SVD by hand]\label{ex:svd22}
+Let $A=\begin{psmallmatrix}3&0\\4&5\end{psmallmatrix}$.
+Then $A\T A=\begin{psmallmatrix}25&20\\20&25\end{psmallmatrix}$, with characteristic
+equation $(25-\lambda)^2-400=0$, so $\lambda=25\pm20$, giving $\lambda_1=45$,
+$\lambda_2=5$ and $\sigma_1=3\sqrt5$, $\sigma_2=\sqrt5$. The eigenvectors of $A\T A$ are
+$\bv_1=\tfrac1{\sqrt2}(1,1)\T$ (for $45$) and $\bv_2=\tfrac1{\sqrt2}(1,-1)\T$ (for $5$).
+Then
+\[
+\bu_1=\frac{A\bv_1}{\sigma_1}=\frac{1}{3\sqrt5}\cdot\frac1{\sqrt2}
+\begin{psmallmatrix}3\\9\end{psmallmatrix}=\frac1{\sqrt{10}}
+\begin{psmallmatrix}1\\3\end{psmallmatrix},\qquad
+\bu_2=\frac{A\bv_2}{\sigma_2}=\frac{1}{\sqrt5}\cdot\frac1{\sqrt2}
+\begin{psmallmatrix}3\\-1\end{psmallmatrix}=\frac1{\sqrt{10}}
+\begin{psmallmatrix}3\\-1\end{psmallmatrix}.
+\]
+These $\bu_i$ are exactly the eigenvectors of $AA\T=\begin{psmallmatrix}9&12\\12&41
+\end{psmallmatrix}$ (eigenvalues $45,5$), confirming Corollary~\ref{cor:evdlink}. One
+checks $A=\sigma_1\bu_1\bv_1\T+\sigma_2\bu_2\bv_2\T$ reproduces $A$.
+\end{example}
+
+\begin{geometry_box}
+Reading $A=U\Sigma V\T$ right to left: $V\T$ \emph{rotates} the input so the right
+singular vectors become coordinate axes; $\Sigma$ \emph{scales} axis $i$ by $\sigma_i$
+(and embeds/projects between $\R^n$ and $\R^m$); $U$ \emph{rotates} the result into the
+output space along the left singular vectors. Consequently $A$ maps the unit sphere of
+$\R^n$ onto an ellipsoid in $\R^m$ whose semi-axes have lengths $\sigma_i$ in directions
+$\bu_i$.
+\end{geometry_box}
+
+\begin{miscon_box}
+``The SVD is just the eigendecomposition of $A$.'' No: $A$ need not be square or
+diagonalizable, and even when it is, the singular values are \emph{not} the absolute
+values of the eigenvalues in general (they coincide only for symmetric PSD $A$). The SVD
+is the eigendecomposition of the symmetric PSD matrices $A\T A$ and $AA\T$, stitched
+together --- a strictly more general and always-available object.
+\end{miscon_box}
+
+\section*{Summary}
+\addcontentsline{toc}{section}{Summary}
+Applying the Spectral Theorem to $A\T A$ yields $V$ and the $\sigma_i$; defining
+$\bu_i=A\bv_i/\sigma_i$ yields an orthonormal $U$; reassembly gives $A=U\Sigma V\T$
+(Theorem~\ref{thm:svdexist}), equivalently the dyadic sum (Corollary~\ref{cor:dyadic}).
+$V,U$ diagonalize $A\T A,AA\T$ (Corollary~\ref{cor:evdlink}); the SVD reads off all four
+fundamental subspaces (Proposition~\ref{prop:foursub}); it is unique up to the sign /
+rotation freedom of Theorem~\ref{thm:svduniq}.
+
+\begin{exercise}
+Prove that multiplying by invertible (in particular orthogonal) matrices preserves rank,
+the fact quoted at the end of Theorem~\ref{thm:svdexist}.
+\end{exercise}
+\begin{exercise}
+Show the pseudoinverse $A^+:=V_r\Sigma_r\inv U_r\T$ satisfies $AA^+A=A$ and $A^+AA^+=A^+$.
+\end{exercise}
+\begin{exercise}
+For $A$ symmetric PSD, prove the SVD and the EVD coincide ($U=V=Q$, $\sigma_i=\lambda_i$).
+\end{exercise}
+\begin{exercise}
+Compute the full SVD of $A=\begin{psmallmatrix}1&1&0\\0&1&1\end{psmallmatrix}$.
+\end{exercise}
+
+%##################################################################
+\chapter{Matrix Norms}\label{ch:norms}
+%##################################################################
+
+\begin{intuition_box}
+To say one matrix is the \emph{best} approximation of another we must measure the size of
+their difference. Two norms matter. The \emph{Frobenius} norm treats a matrix as a long
+vector and measures total entrywise energy; it is the natural least-squares error. The
+\emph{spectral} norm measures the largest stretch $A$ applies to any unit vector; it is
+the natural worst-case error. The Eckart--Young--Mirsky theorem holds for \emph{both},
+and we prove the identities we need for each.
+\end{intuition_box}
+
+\section{The Frobenius norm and trace}
+
+\begin{definition}[Trace]
+For square $M$, $\tr(M)=\sum_i M_{ii}$.
+\end{definition}
+
+\begin{lemma}[Cyclic invariance of trace]\label{lem:cyc}
+For conformable matrices, $\tr(XY)=\tr(YX)$, and hence $\tr(XYZ)=\tr(YZX)=\tr(ZXY)$.
+\end{lemma}
+\begin{proof}
+$\tr(XY)=\sum_i\sum_j X_{ij}Y_{ji}=\sum_j\sum_i Y_{ji}X_{ij}=\tr(YX)$. The three-factor
+identity follows by grouping $X(YZ)$ etc.
+\end{proof}
+
+\begin{definition}[Frobenius norm]
+$\displaystyle \fn{A}=\Bigl(\sum_{i=1}^m\sum_{j=1}^n a_{ij}^2\Bigr)^{1/2}$ for
+$A\in\R^{m\times n}$.
+\end{definition}
+
+\begin{proposition}[Frobenius via trace]\label{prop:frobtr}
+$\fn{A}^2=\tr(A\T A)=\tr(AA\T)=\sum_j\norm{\ba_j}^2$, where $\ba_j$ are the columns.
+\end{proposition}
+\begin{proof}
+$(A\T A)_{jj}=\sum_i a_{ij}^2=\norm{\ba_j}^2$; summing over $j$ gives
+$\tr(A\T A)=\sum_{i,j}a_{ij}^2=\fn{A}^2$. The equality $\tr(A\T A)=\tr(AA\T)$ is
+Lemma~\ref{lem:cyc}.
+\end{proof}
+
+\begin{theorem}[Orthogonal invariance of the Frobenius norm]\label{thm:frobinv}
+If $Q\in\R^{m\times m}$, $P\in\R^{n\times n}$ are orthogonal, then for all
+$A\in\R^{m\times n}$, $\ \fn{QAP}=\fn{A}$.
+\end{theorem}
+\begin{proof}
+Using Proposition~\ref{prop:frobtr} and the cyclic property,
+\[
+\fn{QAP}^2=\tr\bigl((QAP)\T QAP\bigr)=\tr\bigl(P\T A\T Q\T QAP\bigr)
+=\tr\bigl(A\T A\,PP\T\bigr)=\tr(A\T A)=\fn{A}^2,
+\]
+where $Q\T Q=I$ and $PP\T=I$.
+\end{proof}
+
+\begin{corollary}[Frobenius norm in singular values]\label{cor:frobsing}
+$\displaystyle \fn{A}^2=\sum_{i=1}^r\sigma_i^2$.
+\end{corollary}
+\begin{proof}
+By Theorem~\ref{thm:frobinv} with the SVD $A=U\Sigma V\T$,
+$\fn{A}=\fn{U\Sigma V\T}=\fn{\Sigma}$, and $\fn{\Sigma}^2=\sum_i\sigma_i^2$.
+\end{proof}
+
+\section{The spectral (operator-2) norm}
+
+\begin{definition}[Spectral norm]
+$\displaystyle \sn{A}=\max_{\bx\ne\bzero}\frac{\norm{A\bx}}{\norm{\bx}}
+=\max_{\norm{\bx}=1}\norm{A\bx}$.
+\end{definition}
+
+\begin{theorem}[Spectral norm equals the top singular value]\label{thm:specnorm}
+$\sn{A}=\sigma_1$, the largest singular value, with the maximum attained at
+$\bx=\bv_1$ (and $A\bv_1=\sigma_1\bu_1$).
+\end{theorem}
+\begin{proof}
+For $\norm{\bx}=1$ write $\bx=\sum_i c_i\bv_i$ with $\sum_i c_i^2=1$
+(Corollary~\ref{cor:rayleigh} applied to the orthonormal basis $V$). Then
+$A\bx=\sum_{i\le r}\sigma_i c_i\bu_i$, and since the $\bu_i$ are orthonormal,
+\[
+\norm{A\bx}^2=\sum_{i\le r}\sigma_i^2 c_i^2\le\sigma_1^2\sum_i c_i^2=\sigma_1^2 ,
+\]
+so $\norm{A\bx}\le\sigma_1$. Equality holds at $\bx=\bv_1$ (then $c_1=1$, rest $0$),
+where $\norm{A\bv_1}=\sigma_1$. Hence the maximum is exactly $\sigma_1$.
+\end{proof}
+
+\begin{remark}
+Both norms are written entirely in singular values:
+$\fn{A}^2=\sum_i\sigma_i^2$ and $\sn{A}=\sigma_1$. This is why the SVD is the right tool
+for approximation questions phrased in either norm.
+\end{remark}
+
+\section*{Summary}
+\addcontentsline{toc}{section}{Summary}
+The Frobenius norm is total entrywise energy, equal to $\tr(A\T A)$
+(Proposition~\ref{prop:frobtr}), invariant under orthogonal multiplication
+(Theorem~\ref{thm:frobinv}), and equal to $\sqrt{\sum_i\sigma_i^2}$
+(Corollary~\ref{cor:frobsing}). The spectral norm is the maximal stretch, equal to
+$\sigma_1$ (Theorem~\ref{thm:specnorm}). Both are functions of the singular values
+alone.
+
+\begin{exercise}
+Prove $\sn{A}\le\fn{A}\le\sqrt{r}\,\sn{A}$ where $r=\rank A$.
+\end{exercise}
+\begin{exercise}
+Show $\fn{AB}\le\sn{A}\fn{B}$ and $\fn{AB}\le\fn{A}\sn{B}$.
+\end{exercise}
+\begin{exercise}
+Prove $\sn{A}=\sn{A\T}$ and $\fn{A}=\fn{A\T}$ directly from the SVD.
+\end{exercise}
+
+%##################################################################
+\chapter{The Best Rank-$k$ Approximation: Eckart--Young--Mirsky}\label{ch:ey}
+%##################################################################
+
+\begin{intuition_box}
+Everything has been building to this. We truncate the dyadic SVD to its first $k$ terms
+and prove that the result is the closest rank-$k$ matrix to $A$ --- not merely a good
+choice, but the provably optimal one --- in both the Frobenius and the spectral norm. The
+Frobenius proof goes through two lemmas: ``best matrix for a fixed column space is a
+projection'' (which converts the problem from choosing a matrix to choosing a subspace),
+and the \emph{Ky Fan} maximum principle (which solves the subspace problem). The spectral
+proof uses a short dimension-counting argument. No step is taken on faith.
+\end{intuition_box}
+
+\section{The truncated SVD and its error}
+
+\begin{definition}[Truncated SVD]
+For $A=\sum_{i=1}^r\sigma_i\bu_i\bv_i\T$ and $1\le k\le r$, define
+\[
+A_k=\sum_{i=1}^k\sigma_i\bu_i\bv_i\T=U_k\Sigma_k V_k\T,
+\]
+where $U_k,V_k$ keep the first $k$ columns and $\Sigma_k=\operatorname{diag}
+(\sigma_1,\dots,\sigma_k)$. By construction $\rank(A_k)\le k$.
+\end{definition}
+
+\begin{proposition}[Error of the truncation]\label{prop:truncerr}
+$\displaystyle \fn{A-A_k}^2=\sum_{i=k+1}^{r}\sigma_i^2$ and
+$\sn{A-A_k}=\sigma_{k+1}$ (with $\sigma_{r+1}:=0$).
+\end{proposition}
+\begin{proof}
+$A-A_k=\sum_{i=k+1}^r\sigma_i\bu_i\bv_i\T$ is itself an SVD (orthonormal $\bu_i,\bv_i$)
+with singular values $\sigma_{k+1}\ge\cdots\ge\sigma_r$. Apply
+Corollary~\ref{cor:frobsing} for the Frobenius statement and
+Theorem~\ref{thm:specnorm} for the spectral statement.
+\end{proof}
+
+This computes the error of \emph{our} candidate. The theorem asserts no rank-$k$ matrix
+does better. We prove that next.
+
+\section{Lemma A: reduction to a subspace problem}
+
+\begin{lemma}[Best matrix for a fixed column space]\label{lem:projbest}
+Fix a subspace $S\subseteq\R^m$ with $\dimm S\le k$, and let $P_S$ be the orthogonal
+projector onto $S$. Among all $B\in\R^{m\times n}$ with $\col(B)\subseteq S$, the
+Frobenius error $\fn{A-B}$ is minimized by $B=P_SA$, and
+\[
+\min_{\col(B)\subseteq S}\fn{A-B}^2=\fn{(I-P_S)A}^2=\fn{A}^2-\fn{P_SA}^2 .
+\]
+\end{lemma}
+\begin{proof}
+Every column $\bb_j$ of $B$ lies in $S$. By the best-approximation theorem
+(Theorem~\ref{thm:bestapprox}(c)) applied to the column $\ba_j$ of $A$,
+$\norm{\ba_j-\bb_j}\ge\norm{\ba_j-P_S\ba_j}$ with equality at $\bb_j=P_S\ba_j$.
+Squaring and summing over $j$ (Proposition~\ref{prop:frobtr}) gives
+$\fn{A-B}^2\ge\fn{(I-P_S)A}^2$, attained at $B=P_SA$. The final equality is the matrix
+Pythagoras identity (Corollary~\ref{cor:matpyth}).
+\end{proof}
+
+\begin{remark}[Why this is the crucial reduction]
+A matrix has rank $\le k$ \emph{iff} its columns lie in some subspace of dimension
+$\le k$ (Theorem~\ref{thm:rankequiv}). Lemma~\ref{lem:projbest} says that once the
+subspace $S$ is fixed, the optimal $B$ is forced. Hence
+\[
+\min_{\rank(B)\le k}\fn{A-B}^2
+=\min_{\dimm S\le k}\bigl(\fn{A}^2-\fn{P_SA}^2\bigr)
+=\fn{A}^2-\max_{\dimm S\le k}\fn{P_SA}^2 .
+\]
+Minimizing the error is the \emph{same} as maximizing the captured energy
+$\fn{P_SA}^2$ over $k$-dimensional subspaces. That maximization is Lemma~B.
+\end{remark}
+
+\section{Lemma B: the Ky Fan maximum principle}
+
+We first rewrite the captured energy as a sum of quadratic forms.
+
+\begin{lemma}[Captured energy is a sum of quadratic forms]\label{lem:capture}
+If $S$ has orthonormal basis $\bw_1,\dots,\bw_d$ (so $P_S=\sum_j\bw_j\bw_j\T$), then
+\[
+\fn{P_SA}^2=\sum_{j=1}^d\bw_j\T(AA\T)\bw_j .
+\]
+\end{lemma}
+\begin{proof}
+$\fn{P_SA}^2=\tr\bigl((P_SA)\T P_SA\bigr)=\tr(A\T P_S\T P_S A)=\tr(A\T P_S A)$, using
+$P_S\T=P_S$ and $P_S^2=P_S$ (Proposition~\ref{prop:projprops}). With
+$P_S=\sum_j\bw_j\bw_j\T$ and cyclicity of trace,
+$\tr(A\T P_S A)=\sum_j\tr(A\T\bw_j\bw_j\T A)=\sum_j(\bw_j\T A)(A\T\bw_j)
+=\sum_j\bw_j\T(AA\T)\bw_j$.
+\end{proof}
+
+\begin{lemma}[Ky Fan: maximal sum of quadratic forms]\label{lem:kyfan}
+Let $M\in\R^{m\times m}$ be symmetric with eigenvalues
+$\mu_1\ge\mu_2\ge\cdots\ge\mu_m$ and orthonormal eigenvectors $\bq_1,\dots,\bq_m$
+(Spectral Theorem). For every orthonormal set $\bw_1,\dots,\bw_k$,
+\[
+\sum_{j=1}^k\bw_j\T M\bw_j\ \le\ \mu_1+\cdots+\mu_k,
+\]
+with equality when $\bw_j=\bq_j$.
+\end{lemma}
+\begin{proof}
+Extend $\bw_1,\dots,\bw_k$ to an orthonormal basis $\bw_1,\dots,\bw_m$ of $\R^m$. Set
+$c_{ij}=\bq_i\T\bw_j$. Using $M=\sum_i\mu_i\bq_i\bq_i\T$,
+\[
+\sum_{j=1}^k\bw_j\T M\bw_j
+=\sum_{j=1}^k\sum_{i=1}^m\mu_i(\bq_i\T\bw_j)^2
+=\sum_{i=1}^m\mu_i\,t_i,\qquad t_i:=\sum_{j=1}^k c_{ij}^2 .
+\]
+We claim $0\le t_i\le1$ and $\sum_i t_i=k$:
+\begin{itemize}[leftmargin=1.5em]
+\item $t_i\ge0$ trivially; and $t_i\le\sum_{j=1}^m c_{ij}^2=\norm{\bq_i}^2=1$, because
+$\{\bw_j\}_{j=1}^m$ is a full orthonormal basis so the squared coordinates of the unit
+vector $\bq_i$ sum to $1$; truncating to $k\le m$ terms can only decrease the sum.
+\item $\sum_{i=1}^m t_i=\sum_{j=1}^k\sum_{i=1}^m c_{ij}^2=\sum_{j=1}^k\norm{\bw_j}^2=k$,
+since $\{\bq_i\}$ is an orthonormal basis.
+\end{itemize}
+We must therefore bound $\sum_i\mu_it_i$ over $0\le t_i\le1,\ \sum_i t_i=k$. For any such
+$t$,
+\[
+\sum_{i=1}^m\mu_it_i-\sum_{i=1}^k\mu_i
+=\sum_{i=1}^k\mu_i(t_i-1)+\sum_{i>k}\mu_it_i
+\le\mu_k\sum_{i=1}^k(t_i-1)+\mu_k\sum_{i>k}t_i
+=\mu_k\Bigl(\sum_i t_i-k\Bigr)=0,
+\]
+where the inequality uses $\mu_i\ge\mu_k$ together with $t_i-1\le0$ on the first sum, and
+$\mu_i\le\mu_k$ with $t_i\ge0$ on the second. Hence
+$\sum_i\mu_it_i\le\sum_{i=1}^k\mu_i$. Choosing $\bw_j=\bq_j$ gives $t_i=1$ for $i\le k$
+and $0$ otherwise, achieving equality.
+\end{proof}
+
+\begin{geometry_box}
+Ky Fan in words: each unit direction $\bw_j$ has a total ``budget'' of $1$ to distribute
+across the eigen-axes of $M$; $k$ orthonormal directions distribute a total budget of
+$k$, but no single axis can absorb more than $1$. To maximize $\sum_i\mu_it_i$ you place
+a full unit on each of the $k$ largest eigenvalues --- i.e.\ align your directions with
+the top $k$ eigenvectors.
+\end{geometry_box}
+
+\section{The theorem (Frobenius norm)}
+
+\begin{theorem}[Eckart--Young--Mirsky, Frobenius norm]\label{thm:eyf}
+Let $A\in\R^{m\times n}$ have singular values $\sigma_1\ge\cdots\ge\sigma_r>0$ and let
+$1\le k\le r$. Then for every $B$ with $\rank(B)\le k$,
+\[
+\fn{A-B}\ \ge\ \fn{A-A_k},\qquad\text{i.e.}\qquad
+\min_{\rank(B)\le k}\fn{A-B}^2=\sum_{i=k+1}^{r}\sigma_i^2 ,
+\]
+attained at $B=A_k$. If $\sigma_k>\sigma_{k+1}$ the minimizer $A_k$ is unique.
+\end{theorem}
+\begin{proof}
+Let $B$ have $\rank(B)\le k$ and set $S=\col(B)$, so $\dimm S\le k$. By
+Lemma~\ref{lem:projbest},
+\[
+\fn{A-B}^2\ \ge\ \fn{A}^2-\fn{P_SA}^2 .
+\]
+Enlarging $S$ to dimension exactly $k$ only increases $\fn{P_SA}^2$
+(Lemma~\ref{lem:capture} adds nonnegative terms), so assume $\dimm S=k$ with orthonormal
+basis $\bw_1,\dots,\bw_k$. By Lemma~\ref{lem:capture} and the Ky Fan principle
+(Lemma~\ref{lem:kyfan}) applied to $M=AA\T$ --- whose eigenvalues are
+$\sigma_1^2\ge\cdots\ge\sigma_r^2\ge0$ with eigenvectors the left singular vectors $\bu_i$
+(Corollary~\ref{cor:evdlink}) ---
+\[
+\fn{P_SA}^2=\sum_{j=1}^k\bw_j\T(AA\T)\bw_j\ \le\ \sigma_1^2+\cdots+\sigma_k^2 .
+\]
+Therefore, using $\fn{A}^2=\sum_{i=1}^r\sigma_i^2$ (Corollary~\ref{cor:frobsing}),
+\[
+\fn{A-B}^2\ \ge\ \sum_{i=1}^r\sigma_i^2-\sum_{i=1}^k\sigma_i^2=\sum_{i=k+1}^r\sigma_i^2
+=\fn{A-A_k}^2 ,
+\]
+the last equality by Proposition~\ref{prop:truncerr}. Thus no rank-$k$ matrix beats
+$A_k$. The bound is attained by $A_k$: taking
+$S^\star=\spn\{\bu_1,\dots,\bu_k\}$ makes Ky Fan an equality, and the optimal $B$ from
+Lemma~\ref{lem:projbest} is
+\[
+P_{S^\star}A=U_kU_k\T A=U_kU_k\T(U\Sigma V\T)=U_k\Sigma_k V_k\T=A_k,
+\]
+because $U_k\T U$ extracts the first $k$ rows of $\Sigma V\T$.
+
+\emph{Uniqueness when $\sigma_k>\sigma_{k+1}$.} Equality throughout forces (i) Ky Fan
+tight and (ii) the projection bound tight. With the strict gap
+$\sigma_k^2>\sigma_{k+1}^2$, the optimal weight vector $t$ in Lemma~\ref{lem:kyfan} is the
+unique vertex $t_1=\cdots=t_k=1$, which forces $S=\spn\{\bu_1,\dots,\bu_k\}$ exactly;
+then (ii) forces $B=P_SA=A_k$.
+\end{proof}
+
+\begin{miscon_box}
+A popular shortcut argues: rotate by $U,V$ to reduce the problem to
+$\min_{\rank(C)\le k}\fn{\Sigma-C}$ with $C=U\T BV$; observe that off-diagonal entries of
+$C$ only add error; conclude ``the optimal $C$ is diagonal,'' then keep the top $k$
+$\sigma_i$. The \emph{answer} is right but the conclusion ``optimal $C$ is diagonal'' is
+\emph{not} justified by the off-diagonal observation alone: zeroing off-diagonals can
+change the rank, so one is not comparing matrices of the same rank. Optimizing the
+diagonal and the off-diagonal separately ignores that the rank constraint couples all
+entries. The genuine content --- that no rank-$k$ competitor (diagonal or not) beats the
+truncation --- is supplied precisely by Ky Fan (Lemma~\ref{lem:kyfan}). Our proof never
+assumes diagonality; the diagonal form of $A_k$ \emph{emerges} as the conclusion.
+\end{miscon_box}
+
+\section{The theorem (spectral norm)}
+
+\begin{theorem}[Eckart--Young--Mirsky, spectral norm]\label{thm:eys}
+With the notation above, for every $B$ with $\rank(B)\le k$,
+\[
+\sn{A-B}\ \ge\ \sigma_{k+1}=\sn{A-A_k}.
+\]
+Hence $A_k$ is also a best rank-$k$ approximation in the spectral norm.
+\end{theorem}
+\begin{proof}
+We already have $\sn{A-A_k}=\sigma_{k+1}$ (Proposition~\ref{prop:truncerr}). Let $B$ have
+$\rank(B)\le k$, so $\dimm\nul(B)\ge n-k$ (Rank--Nullity). Consider the
+$(k+1)$-dimensional subspace $T=\spn\{\bv_1,\dots,\bv_{k+1}\}$. Since
+\[
+\dimm\nul(B)+\dimm T\ \ge\ (n-k)+(k+1)=n+1>n,
+\]
+the two subspaces of $\R^n$ intersect nontrivially; pick a unit vector
+$\bw\in\nul(B)\cap T$. Write $\bw=\sum_{i=1}^{k+1}c_i\bv_i$ with $\sum_i c_i^2=1$. Then
+$B\bw=\bzero$, so $(A-B)\bw=A\bw=\sum_{i=1}^{k+1}\sigma_ic_i\bu_i$, and by orthonormality
+of the $\bu_i$,
+\[
+\norm{(A-B)\bw}^2=\sum_{i=1}^{k+1}\sigma_i^2c_i^2\ \ge\
+\sigma_{k+1}^2\sum_{i=1}^{k+1}c_i^2=\sigma_{k+1}^2 ,
+\]
+using $\sigma_i\ge\sigma_{k+1}$ for $i\le k+1$. Therefore
+$\sn{A-B}\ge\norm{(A-B)\bw}/\norm{\bw}\ge\sigma_{k+1}$.
+\end{proof}
+
+\begin{remark}[Weyl's inequality, optional]
+The spectral result is a special case of \emph{Weyl's inequality}
+$\sigma_{i+j-1}(X+Y)\le\sigma_i(X)+\sigma_j(Y)$: with $X=A-B$, $Y=B$, $j=k+1$, and
+$\sigma_{k+1}(B)=0$ (since $\rank B\le k$), one gets
+$\sigma_{i+k}(A)\le\sigma_i(A-B)$, whose $i=1$ case is the theorem and whose squares
+summed give an alternative proof of the Frobenius version.
+\end{remark}
+
+\begin{ml_box}
+The two norms answer two questions. Frobenius ($\sum_{i>k}\sigma_i^2$) is the
+\emph{total} reconstruction energy lost --- the right metric for compression and PCA,
+where average error matters. Spectral ($\sigma_{k+1}$) is the \emph{worst-case}
+direction-wise error --- the right metric for stability and for guarantees of the form
+``no single mode is mis-estimated by more than $\sigma_{k+1}$.'' Remarkably, the same
+matrix $A_k$ is optimal for both.
+\end{ml_box}
+
+\section*{Summary}
+\addcontentsline{toc}{section}{Summary}
+The truncation $A_k$ has Frobenius error $\sqrt{\sum_{i>k}\sigma_i^2}$ and spectral error
+$\sigma_{k+1}$ (Proposition~\ref{prop:truncerr}). Lemma~\ref{lem:projbest} converts
+``best rank-$k$ matrix'' into ``best $k$-dimensional subspace''; Lemma~\ref{lem:kyfan}
+(Ky Fan) solves that subspace problem; together they prove the Frobenius optimality of
+$A_k$ (Theorem~\ref{thm:eyf}). A dimension-counting argument proves spectral optimality
+(Theorem~\ref{thm:eys}). In both norms, $A_k$ is best, and the discarded singular values
+quantify the error exactly.
+
+\begin{exercise}
+Prove that if $\sigma_k=\sigma_{k+1}$ the minimizer in Theorem~\ref{thm:eyf} need not be
+unique, by exhibiting a matrix and two distinct optimal $A_k$'s.
+\end{exercise}
+\begin{exercise}
+Deduce from Theorem~\ref{thm:eyf} that the relative error
+$\fn{A-A_k}/\fn{A}=\sqrt{\sum_{i>k}\sigma_i^2/\sum_i\sigma_i^2}$ equals one minus the
+captured ``energy fraction.''
+\end{exercise}
+\begin{exercise}
+Using the intersection argument of Theorem~\ref{thm:eys}, prove the more general
+statement $\sn{A-B}\ge\sigma_{k+1}$ holds even when $B$ ranges over all matrices with
+$\rank(B)\le k$ that need not share $A$'s singular vectors.
+\end{exercise}
+\begin{exercise}
+Prove the Frobenius theorem a second way from Weyl's inequality (state and assume Weyl).
+\end{exercise}
+
+%##################################################################
+\chapter{Intuition After the Proof: Where the SVD Lives}\label{ch:intuition}
+%##################################################################
+
+\begin{intuition_box}
+Now that optimality is \emph{proved}, we may indulge in intuition without risk of
+circularity. Each application below is the Eckart--Young--Mirsky theorem wearing
+different clothes: replace a matrix by its best low-rank approximation and read off the
+consequences.
+\end{intuition_box}
+
+\section{Geometry: hyper-ellipsoids and dominant directions}
+$A$ sends the unit sphere of $\R^n$ to an ellipsoid in $\R^m$ with semi-axis lengths
+$\sigma_i$ along $\bu_i$ (Chapter~\ref{ch:svd}). Truncating to $A_k$ keeps the $k$
+longest axes and flattens the rest --- the best $k$-dimensional ``shadow'' of the
+ellipsoid, by Theorem~\ref{thm:eyf}.
+
+\section{Principal Component Analysis}
+Let $X\in\R^{m\times n}$ hold $m$ data points in rows; centre it to $X_c=X-\mathbf 1\bmu\T$.
+The covariance $\Sigma_{\mathrm{cov}}=\tfrac1m X_c\T X_c$ is symmetric PSD, and by
+Corollary~\ref{cor:evdlink} its eigenvectors are the right singular vectors $\bv_i$ of
+$X_c$ with eigenvalues $\lambda_i=\sigma_i^2/m$. Thus:
+\[
+\textbf{principal directions}=\{\bv_i\},\qquad
+\textbf{variance along }\bv_i=\sigma_i^2/m .
+\]
+Projecting onto $\spn\{\bv_1,\dots,\bv_k\}$ gives the $k$-dimensional representation of
+least squared reconstruction error --- exactly Theorem~\ref{thm:eyf} applied to $X_c$.
+PCA \emph{is} truncated SVD of the centred data.
+
+\section{Image compression}
+A grayscale image is a matrix of intensities. Its singular values typically decay
+quickly, so $A_k$ with modest $k$ is visually indistinguishable from $A$ while storing
+$k(m+n+1)$ numbers instead of $mn$. The error $\sqrt{\sum_{i>k}\sigma_i^2}$ is the
+provably smallest achievable at rank $k$.
+
+\section{Latent Semantic Analysis and word embeddings}
+For a term--document matrix $A$ (entry $=$ frequency of term $i$ in document $j$), the
+truncated SVD $A_k=U_k\Sigma_kV_k\T$ maps terms and documents into a shared
+$k$-dimensional ``concept'' space. Synonymous terms, though never co-occurring, acquire
+nearby rows in $U_k\Sigma_k$ because they load on the same singular directions. Modern
+word-embedding methods are descendants of this idea: a low-rank factorization of a
+(transformed) co-occurrence matrix.
+
+\section{Recommendation systems and matrix completion}
+A user--item matrix is modelled as approximately low rank: tastes are governed by a few
+latent factors. Filling missing entries and truncating by SVD predicts unseen ratings;
+the low-rank assumption is exactly the statement that $A\approx A_k$, whose optimality
+Theorem~\ref{thm:eyf} guarantees among rank-$k$ models.
+
+\section{LoRA: low-rank adaptation of large models}
+Fine-tuning a pretrained weight matrix $W_0$ produces an update $\Delta W$. Empirically
+$\Delta W$ is close to low rank, so LoRA stores it factored as $\Delta W=BA$ with
+$B\in\R^{m\times k}$, $A\in\R^{k\times n}$, $k\ll m,n$. Training only $B,A$ replaces $mn$
+parameters with $k(m+n)$ --- the same compression accounting as
+Chapter~\ref{ch:ey}, deployed on gradient updates instead of images. The viability of
+LoRA is the empirical claim that the best rank-$k$ approximation of the update loses
+little, i.e.\ that the tail $\sum_{i>k}\sigma_i^2(\Delta W)$ is small.
+
+\section{Why the SVD is central to machine learning}
+Every task above reduces to the same operation: \emph{represent a matrix by its best
+low-rank approximation}. The SVD provides that approximation, the theorem certifies its
+optimality, and the singular values quantify exactly what is kept and what is lost. That
+combination --- a universal decomposition plus a sharp optimality guarantee plus an
+interpretable error --- is why the SVD recurs throughout statistics, signal processing,
+and deep learning.
+
+\section*{Summary}
+\addcontentsline{toc}{section}{Summary}
+PCA, compression, LSA, embeddings, recommenders, and LoRA are one theorem in disguise:
+substitute $A_k$ for $A$. The right singular vectors are PCA's principal directions and
+LSA's concepts; the singular values are variances, signal strengths, and compression
+budgets; the discarded tail $\sum_{i>k}\sigma_i^2$ is the provably minimal information
+lost.
+
+\begin{exercise}
+Show that the rank-$k$ PCA reconstruction $\hat X=\mathbf 1\bmu\T+(X_c V_k)V_k\T$ equals
+$\mathbf 1\bmu\T+(X_c)_k$, the truncated SVD of the centred data, and conclude its
+optimality from Theorem~\ref{thm:eyf}.
+\end{exercise}
+\begin{exercise}
+For an image with singular values $\sigma_i\propto i^{-1}$, estimate the relative
+Frobenius error of $A_k$ as a function of $k$.
+\end{exercise}
+\begin{exercise}
+Argue that if a fine-tuning update has rapidly decaying singular values, a small LoRA
+rank $k$ suffices, and quantify ``suffices'' via $\sum_{i>k}\sigma_i^2$.
+\end{exercise}
+
+\backmatter
+\chapter{Notation and Theorem Dependency}
+\addcontentsline{toc}{chapter}{Notation and Theorem Dependency}
+
+\textbf{Notation.}
+$\R^n$ real $n$-vectors; $A\T$ transpose; $\inner{\cdot}{\cdot}$ inner product;
+$\norm{\cdot}$ Euclidean norm; $\fn{\cdot}$ Frobenius norm; $\sn{\cdot}$ spectral norm;
+$\tr$ trace; $\col,\row,\nul$ the fundamental subspaces; $\rank$ rank; $P_S$ orthogonal
+projector onto $S$; $\sigma_i$ singular values; $\bu_i,\bv_i$ left/right singular
+vectors; $A_k$ rank-$k$ truncated SVD.
+
+\medskip
+\noindent\textbf{Dependency spine.}
+Theorem~\ref{thm:rankequiv} (rank) and Theorem~\ref{thm:rank1} (rank-one)
+$\to$ Theorem~\ref{thm:bestapprox} (best approximation) and
+Corollary~\ref{cor:matpyth} (matrix Pythagoras)
+$\to$ Theorem~\ref{thm:eigorth} (orthogonal eigenvectors)
+$\to$ Theorem~\ref{thm:spectral} (Spectral Theorem)
+$\to$ Propositions~\ref{prop:grampsd},~\ref{prop:sharedspec} (PSD)
+$\to$ Theorem~\ref{thm:svdexist} (SVD exists)
+$\to$ Theorem~\ref{thm:frobinv}, Corollary~\ref{cor:frobsing},
+Theorem~\ref{thm:specnorm} (norms)
+$\to$ Lemmas~\ref{lem:projbest},~\ref{lem:capture},~\ref{lem:kyfan}
+$\to$ Theorems~\ref{thm:eyf},~\ref{thm:eys} (Eckart--Young--Mirsky).
+
+\vspace{1cm}
+\begin{center}
+\color{steel}\itshape
+``The SVD is the Spectral Theorem for rectangular matrices; Eckart--Young--Mirsky says
+that keeping the largest singular values loses provably the least.''
+\end{center}
+
+\end{document}

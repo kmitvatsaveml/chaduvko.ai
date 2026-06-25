@@ -1,0 +1,2100 @@
+\documentclass{beamer}
+\hypersetup{pdfpagemode=FullScreen}
+\setbeamertemplate{navigation symbols}{}
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[T1]{fontenc}
+\usepackage{times}
+\usepackage{mathptmx}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{mathtools}
+\usepackage{algorithm,algorithmic}
+\usepackage{bm}
+
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+
+\mode<presentation>{
+  \usetheme{Madrid}
+  \usecolortheme{whale}
+}
+
+\setbeamertemplate{blocks}[rounded][shadow=false]
+\AtBeginEnvironment{block}{\small}
+\AtBeginEnvironment{alertblock}{\small}
+\AtBeginEnvironment{exampleblock}{\small}
+\setbeamersize{text margin left=6pt, text margin right=6pt}
+\setbeamercovered{transparent}
+\setbeamertemplate{bibliography item}[text]
+\setbeamertemplate{theorems}[numbered]
+\setbeamerfont{title}{size=\large}
+\setbeamerfont{date}{size=\tiny}
+\setbeamertemplate{itemize items}[ball]
+\setbeamertemplate{itemize subitem}[circle]
+\setbeamertemplate{itemize subsubitem}[triangle]
+\setbeamertemplate{caption}[numbered]
+
+%------------------------------------------------------------------
+%  TITLE PAGE
+%------------------------------------------------------------------
+\title[Autoencoders \& Regularisation]{%
+  Autoencoders\\[4pt]
+  and Regularisation}
+
+\author[Vatsav Reddy]{%
+  \texorpdfstring{%
+    {\Large Vatsav Reddy}\\[6pt]
+    {\small Under the Guidance of}\\[2pt]
+    {\small Prof.\ Praveen Parchuri}%
+  }{Vatsav Reddy}}
+
+\institute[IIITH]{%
+  {\normalsize International Institute of Information Technology, Hyderabad}}
+
+\date{\today}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}[shrink=20]{Contents}
+  \tableofcontents
+\end{frame}
+
+\AtBeginSection[]{
+  \begin{frame}<beamer>
+    \frametitle{Current Section}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
+%==================================================================
+\section{Introduction to Autoencoders}
+%==================================================================
+
+\begin{frame}[shrink=10]{What is an Autoencoder?}
+  \begin{block}{Definition}
+    An \textbf{autoencoder} is a special feed-forward neural network that
+    learns to copy its input to its output through a compressed
+    intermediate representation. It performs two operations:
+    \begin{itemize}\setlength\itemsep{4pt}
+      \item \textbf{Encode:} map input $\mathbf{x}_i$ into a hidden
+            representation $\mathbf{h}$.
+      \item \textbf{Decode:} reconstruct the input from $\mathbf{h}$ to
+            produce the output $\hat{\mathbf{x}}_i$.
+    \end{itemize}
+  \end{block}
+
+  \begin{block}{The Two Maps}
+    \[
+      \mathbf{h} = g(W\mathbf{x}_i + \mathbf{b})
+      \qquad\qquad
+      \hat{\mathbf{x}}_i = f(W^{*}\mathbf{h} + \mathbf{c})
+    \]
+    with $\mathbf{x}_i \in \mathbb{R}^{n}$, $\mathbf{h} \in \mathbb{R}^{d}$,
+    $W \in \mathbb{R}^{d\times n}$, $W^{*} \in \mathbb{R}^{n\times d}$.
+    Here $g$ is the encoder \emph{nonlinearity} and $f$ the decoder
+    nonlinearity.
+  \end{block}
+
+  \begin{alertblock}{Goal}
+    We want $\mathbf{h}$ to capture the \emph{most important
+    characteristics} of $\mathbf{x}_i$: everything required to reconstruct
+    the original input.
+    Training minimises a loss that forces
+    $\hat{\mathbf{x}}_i \approx \mathbf{x}_i$.
+  \end{alertblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Undercomplete Autoencoders}
+  \begin{block}{When $\dim(\mathbf{h}) < \dim(\mathbf{x}_i)$}
+    The hidden layer is \emph{smaller} than the input. If the network can
+    still reconstruct $\mathbf{x}_i$ from $\mathbf{h}$, then $\mathbf{h}$
+    is a \textbf{loss-free encoding}: it has captured all the important
+    characteristics of $\mathbf{x}_i$ in fewer dimensions.
+  \end{block}
+
+  \begin{exampleblock}{The Analogy with PCA}
+    This is exactly what PCA does. The bottleneck $\mathbf{h}$:
+    \begin{itemize}\setlength\itemsep{3pt}
+      \item gets rid of \textbf{noise},
+      \item discards \textbf{low-variance} directions,
+      \item removes \textbf{correlated / redundant} dimensions.
+    \end{itemize}
+    We will later prove that a \emph{linear} undercomplete autoencoder is
+    mathematically equivalent to PCA.
+  \end{exampleblock}
+
+  \begin{block}{Compression Intuition}
+    Think of a $10$-bit object compressed to a $4$-bit code, then expanded
+    back to $10$ bits. If reconstruction succeeds, the $4$-bit code retained
+    all essential information --- the rest was redundant.
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Overcomplete Autoencoders}
+  \begin{block}{When $\dim(\mathbf{h}) \geq \dim(\mathbf{x}_i)$}
+    The hidden layer is \emph{at least as large} as the input.
+    In this case the autoencoder can learn a \textbf{trivial identity
+    encoding}: simply copy $\mathbf{x}_i$ into $\mathbf{h}$, then copy
+    $\mathbf{h}$ into $\hat{\mathbf{x}}_i$.
+  \end{block}
+
+  \begin{alertblock}{Why the Identity Encoding is Useless}
+    An identity mapping reconstructs perfectly but tells us
+    \emph{nothing} about the important characteristics of the data ---
+    no compression, no insight, no denoising. It is like copying a
+    file rather than compressing it.
+  \end{alertblock}
+
+  \begin{block}{The Core Problem}
+    There is \emph{no reason} the network should choose to disentangle
+    features rather than copy them. Left alone, it tends to learn the
+    easy identity map. Hence we need \textbf{special methods}
+    (regularisation) to prevent this kind of trivial representation ---
+    this motivates the entire second half of these notes.
+  \end{block}
+\end{frame}
+
+%==================================================================
+\section{Choice of Decoder and Loss Function}
+%==================================================================
+
+\begin{frame}[shrink=10]{Two Design Choices}
+  \begin{block}{What Must Be Chosen}
+    Designing an autoencoder requires two decisions:
+    \begin{enumerate}\setlength\itemsep{4pt}
+      \item the decoder activation $f$ (and encoder activation $g$),
+      \item the reconstruction \textbf{loss function}.
+    \end{enumerate}
+    Both depend on the \emph{type} of input data (binary vs.\ real-valued).
+  \end{block}
+
+  \begin{block}{Binary Inputs}
+    Suppose each $x_{ij} \in \{0,1\}$ is a binary variable.
+    Candidate decoders:
+    \[
+      \hat{x}_i = \tanh(W^{*}\mathbf{h}+\mathbf{c}) \in [-1,1],\quad
+      \hat{x}_i = W^{*}\mathbf{h}+\mathbf{c} \in \mathbb{R},\quad
+      \hat{x}_i = \text{logistic}(W^{*}\mathbf{h}+\mathbf{c})
+    \]
+    Since inputs lie in $\{0,1\}$, the \textbf{logistic (sigmoid)} decoder
+    is most apt --- it naturally restricts outputs to $[0,1]$ and can be
+    read as a probability. The encoder $g$ is also typically the sigmoid.
+  \end{block}
+
+  \begin{exampleblock}{Real-Valued Inputs}
+    For $\mathbf{x}_i \in \mathbb{R}^n$ (e.g.\ pixel intensities
+    $0.25,\,0.5,\ldots$), logistic and $\tanh$ would wrongly restrict the
+    output to $[0,1]$ or $[-1,1]$. The most apt decoder is
+    \textbf{linear}: $\hat{x}_i = W^{*}\mathbf{h}+\mathbf{c}$, since the
+    output should lie in $\mathbb{R}$. Again $g$ is typically the sigmoid.
+  \end{exampleblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Loss Function: Real-Valued Inputs (Squared Error)}
+  \begin{block}{Objective}
+    The objective of the autoencoder is to reconstruct $\hat{\mathbf{x}}_i$
+    as close to $\mathbf{x}_i$ as possible. For real-valued inputs we use
+    \textbf{squared-error} loss:
+    \[
+      \min_{W,W^{*},\mathbf{b},\mathbf{c}}
+        \frac{1}{m}\sum_{i=1}^{m}\sum_{j=1}^{n}
+        \bigl(\hat{x}_{ij} - x_{ij}\bigr)^2
+      \;=\;
+      \min_{W,W^{*},\mathbf{b},\mathbf{c}}
+        \frac{1}{m}\sum_{i=1}^{m}
+        (\hat{\mathbf{x}}_i - \mathbf{x}_i)^{\!\top}
+        (\hat{\mathbf{x}}_i - \mathbf{x}_i)
+    \]
+    This is just the average squared $\ell_2$ distance between the
+    reconstruction and the input over all $m$ training points.
+  \end{block}
+
+  \begin{block}{Training via Back-Propagation}
+    The autoencoder is trained exactly like a regular feed-forward network
+    using back-propagation. All we need is a formula for the gradient of
+    the loss with respect to the output of the last layer.
+    With $L(\theta) = (\hat{\mathbf{x}}_i - \mathbf{x}_i)^{\!\top}
+    (\hat{\mathbf{x}}_i - \mathbf{x}_i)$:
+    \[
+      \frac{\partial L(\theta)}{\partial \hat{\mathbf{x}}_i}
+        = \nabla_{\hat{\mathbf{x}}_i}
+          (\hat{\mathbf{x}}_i - \mathbf{x}_i)^{\!\top}
+          (\hat{\mathbf{x}}_i - \mathbf{x}_i)
+        = 2(\hat{\mathbf{x}}_i - \mathbf{x}_i)
+    \]
+    From this seed gradient, the chain rule propagates derivatives back
+    through decoder and encoder, exactly as in standard back-propagation.
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Loss Function: Binary Inputs (Cross-Entropy)}
+  \begin{block}{Why a Probabilistic Loss?}
+    With a sigmoid decoder the output $\sigma(\cdot)\in(0,1)$ can be read
+    as a \emph{probability}: an output of $0.8$ means the network is
+    $80\%$ confident the true value is $1$, and $0.2$ means $20\%$
+    confident it is $1$ (i.e.\ $80\%$ confident it is $0$).
+    Whenever a probabilistic interpretation is possible, \textbf{cross-entropy}
+    loss often works much better than squared loss.
+  \end{block}
+
+  \begin{block}{Cross-Entropy Reconstruction Loss}
+    \[
+      \boxed{\;
+        \min\; -\frac{1}{m}\sum_{i=1}^{m}\sum_{j=1}^{n}
+          \Bigl[\,x_{ij}\log \hat{x}_{ij}
+            + (1-x_{ij})\log(1-\hat{x}_{ij})\,\Bigr]
+      \;}
+    \]
+    derived from the general cross-entropy $-\sum_l p_l\log q_l$ with the
+    true distribution $p=(1-x_{ij},\,x_{ij})$ and estimate
+    $q=(1-\hat{x}_{ij},\,\hat{x}_{ij})$.
+  \end{block}
+
+  \begin{exampleblock}{Which $\hat{x}_{ij}$ Minimises This?}
+    Treating one term: if $x_{ij}=1$ the loss is $-\log\hat{x}_{ij}$,
+    minimised by $\hat{x}_{ij}=1$. If $x_{ij}=0$ the loss is
+    $-\log(1-\hat{x}_{ij})$, minimised by $\hat{x}_{ij}=0$. So the optimum
+    is precisely $\hat{x}_{ij}=x_{ij}$ --- the loss rewards matching the
+    target. \quad(With $h_{2j}=\hat{x}_{ij}=\sigma(a_{2j})$.)
+  \end{exampleblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Back-Propagation through the Cross-Entropy Loss}
+  \begin{block}{Seed Gradient at the Output}
+    For a single output unit with target $x_{ij}$ and reconstruction
+    $\hat{x}_{ij}=\sigma(a_{2j})$, the loss
+    $L(\theta)=-\bigl[x_{ij}\log\hat{x}_{ij}+(1-x_{ij})\log(1-\hat{x}_{ij})\bigr]$
+    gives
+    \[
+      \frac{\partial L(\theta)}{\partial \hat{x}_{ij}}
+        = -\frac{x_{ij}}{\hat{x}_{ij}}
+          + \frac{1-x_{ij}}{1-\hat{x}_{ij}}
+    \]
+    and through the sigmoid pre-activation $a_{2j}$,
+    $\dfrac{d\hat{x}_{ij}}{d a_{2j}} = \sigma(a_{2j})\bigl(1-\sigma(a_{2j})\bigr)$.
+  \end{block}
+
+  \begin{block}{Chain Rule Assembles the Full Gradient}
+    \[
+      \frac{\partial L(\theta)}{\partial W}
+        = \underbrace{\frac{\partial L(\theta)}{\partial \mathbf{h}_2}}_{\text{reuse}}
+          \,\frac{\partial \mathbf{h}_2}{\partial \mathbf{a}_2}
+          \,\frac{\partial \mathbf{a}_2}{\partial \mathbf{h}_1}
+          \,\frac{\partial \mathbf{h}_1}{\partial \mathbf{a}_1}
+          \,\frac{\partial \mathbf{a}_1}{\partial W}
+    \]
+    The boxed quantity is computed once and \emph{reused};
+    only the term that varies in the summation index $j$ gets
+    differentiated. This is the standard back-propagation recipe applied
+    to the autoencoder.
+  \end{block}
+
+  \begin{alertblock}{Summary of Choices}
+    \textbf{Binary input} $\Rightarrow$ sigmoid decoder $+$ cross-entropy loss.\quad
+    \textbf{Real-valued input} $\Rightarrow$ linear decoder $+$ squared-error loss.
+    The encoder $g$ is typically sigmoid in both cases. The hidden layer is the
+    \emph{bottleneck} that defines the learned representation.
+  \end{alertblock}
+\end{frame}
+
+%==================================================================
+\section{Link between PCA and Autoencoders}
+%==================================================================
+
+\begin{frame}[shrink=10]{Claim: A Linear Autoencoder is PCA}
+  \begin{block}{The Four Conditions}
+    The \emph{encoder} of an autoencoder is equivalent to PCA provided we:
+    \begin{enumerate}\setlength\itemsep{3pt}
+      \item use a \textbf{linear encoder} ($\mathbf{h}=W\mathbf{x}$, not $\sigma(W\mathbf{x})$),
+      \item use a \textbf{linear decoder} ($\hat{\mathbf{x}}=W^{*}\mathbf{h}$),
+      \item use a \textbf{squared-error} loss function,
+      \item \textbf{normalise} the inputs as below.
+    \end{enumerate}
+  \end{block}
+
+  \begin{block}{Normalisation (Centring + Scaling)}
+    \[
+      \hat{x}_{ij}
+        = \frac{1}{\sqrt{m}}
+          \Bigl(x_{ij} - \tfrac{1}{m}\sum_{k=1}^{m}x_{kj}\Bigr)
+    \]
+    The bracket subtracts the column (feature) mean, so the data has
+    \textbf{zero mean} along each dimension $j$. Let $X'$ be this
+    zero-mean data matrix; then $X = \tfrac{1}{\sqrt{m}}X'$.
+  \end{block}
+
+  \begin{exampleblock}{Why This Matters}
+    With this scaling, $X^{\top}X = \frac{1}{m}(X')^{\top}X'$ is exactly the
+    \textbf{covariance matrix} --- and the covariance matrix is what PCA
+    diagonalises. This is the bridge between the two methods.
+  \end{exampleblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Reformulating the Objective via the Frobenius Norm}
+  \begin{block}{Squared Error as a Matrix Norm}
+    The reconstruction objective
+    $\frac{1}{m}\sum_{i=1}^m\sum_{j=1}^n (x_{ij}-\hat{x}_{ij})^2$
+    is precisely a \textbf{Frobenius norm}:
+    \[
+      \min_{W,W^{*}}
+        \bigl\| X - H W^{*} \bigr\|_F^{2}
+    \]
+    where row $i$ of $H$ is the code $\mathbf{h}_i$ and
+    $\|A\|_F = \sqrt{\sum_{i,j} a_{ij}^2}$ is the square root of the sum of
+    squared entries. (We ignore the biases here.)
+  \end{block}
+
+  \begin{block}{Dimensions}
+    With $m$ points in $\mathbb{R}^n$ and code size $k$:
+    $X \in \mathbb{R}^{m\times n}$,\;
+    $H \in \mathbb{R}^{m\times k}$ (encoder output, $H = XW^{\top}$ for a
+    linear encoder with $W\in\mathbb{R}^{k\times n}$),\;
+    $W^{*} \in \mathbb{R}^{k\times n}$ (decoder).
+    We seek the best rank-$k$ factorisation $HW^{*}$ of the data $X$.
+  \end{block}
+
+  \begin{alertblock}{Key Recognition}
+    Writing $\hat{X} = HW^{*}$, the problem is
+    $\min \|X - \hat{X}\|_F^2$ over rank-$k$ matrices $\hat{X}$ ---
+    \emph{exactly} the best low-rank approximation problem solved by SVD
+    (Eckart--Young).
+  \end{alertblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Solving with SVD}
+  \begin{block}{Optimal Low-Rank Solution}
+    Let $X = U\Sigma V^{\top}$ be the SVD of the centred data. By the
+    Eckart--Young theorem the optimal rank-$k$ reconstruction is
+    \[
+      \hat{X} = U_{\cdot,\le k}\,\Sigma_{k\times k}\,V_{\cdot,\le k}^{\top}
+    \]
+    where $U_{\cdot,\le k}$ keeps the first $k$ columns, etc.
+  \end{block}
+
+  \begin{block}{Matching Variables}
+    Comparing $\hat{X}=HW^{*}$ with $U_{\cdot,\le k}\Sigma_{k\times k}V_{\cdot,\le k}^{\top}$,
+    one valid identification is
+    \[
+      H = U_{\cdot,\le k}\,\Sigma_{k\times k},
+      \qquad
+      W^{*} = V_{\cdot,\le k}^{\top}.
+    \]
+    We now show the corresponding \textbf{encoder} is linear and recover
+    its weight matrix $W$.
+  \end{block}
+
+  \begin{block}{Recovering the Encoder Weights $W$ (so that $H = XW^{\top}$, here written $H = MX$ logic)}
+    We use $X = U\Sigma V^{\top}$, $V^{\top}V = I$, $U^{\top}U = I$, the
+    pseudo-inverse identity $(XX^{\top})(XX^{\top})^{-1} = I$, and the
+    transpose rule $(ABC)^{\top} = C^{\top}B^{\top}A^{\top}$.
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Deriving $H = X\,V_{\cdot,\le k}$ (the Encoder is Linear)}
+  \begin{block}{Express $H$ Using Only $X$}
+    Start from $H = U_{\cdot,\le k}\Sigma_{k\times k}$ but we do not want
+    $U$ explicitly --- we want $H$ as a linear map of $X$. Substitute
+    $U_{\cdot,\le k}\Sigma_{k\times k}
+       = (XX^{\top})(XX^{\top})^{-1}U_{\cdot,\le k}\Sigma_{k\times k}$
+    and $X = U\Sigma V^{\top}$:
+    \begin{align*}
+      H &= (XX^{\top})(XX^{\top})^{-1}\,U_{\cdot,\le k}\Sigma_{k\times k}\\
+        &= (XV\Sigma^{\top}U^{\top})\bigl(U\Sigma V^{\top}V\Sigma^{\top}U^{\top}\bigr)^{-1}
+            U_{\cdot,\le k}\Sigma_{k\times k}\\
+        &= XV\Sigma^{\top}U^{\top}
+            \bigl(U\Sigma\Sigma^{\top}U^{\top}\bigr)^{-1}
+            U_{\cdot,\le k}\Sigma_{k\times k}\\
+        &= XV\Sigma^{\top}\,U^{\top}U
+            (\Sigma\Sigma^{\top})^{-1}U^{\top}
+            U_{\cdot,\le k}\Sigma_{k\times k}\\
+        &= XV\,\Sigma^{\top}(\Sigma\Sigma^{\top})^{-1}\,
+            \underbrace{U^{\top}U_{\cdot,\le k}}_{I_{\cdot,\le k}}\Sigma_{k\times k}\\
+        &= XV\,\Sigma^{-1}I_{\cdot,\le k}\,\Sigma_{k\times k}
+         = XV\,I_{\cdot,\le k}
+         = X\,V_{\cdot,\le k}.
+    \end{align*}
+  \end{block}
+
+  \begin{exampleblock}{Conclusion}
+    $H = X\,V_{\cdot,\le k}$ is a \textbf{linear transformation} of $X$.
+    Therefore the optimal encoder is a \emph{linear} encoder with weights
+    $W = V_{\cdot,\le k}$.
+  \end{exampleblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{The Encoder Weights Equal the PCA Projection Matrix}
+  \begin{block}{Chain of Identities}
+    \begin{itemize}\setlength\itemsep{4pt}
+      \item We have the encoder $W = V_{\cdot,\le k}$.
+      \item From SVD: $V$ consists of the \textbf{eigenvectors of $X^{\top}X$}.
+      \item From PCA: the projection matrix $P$ consists of the
+            \textbf{eigenvectors of the covariance matrix}.
+      \item With the normalisation
+            $\hat{x}_{ij}=\frac{1}{\sqrt{m}}\bigl(x_{ij}-\frac1m\sum_k x_{kj}\bigr)$,
+            the matrix $X^{\top}X$ \emph{is} the covariance matrix.
+    \end{itemize}
+  \end{block}
+
+  \begin{alertblock}{Hence Proved}
+    The encoder matrix $W$ of a linear autoencoder and the projection
+    matrix $P$ of PCA are computed from the eigenvectors of the same
+    covariance matrix --- so they are the \textbf{same}. A linear
+    undercomplete autoencoder \emph{is} PCA. \hfill $\square$
+  \end{alertblock}
+
+  \begin{block}{Remember --- the Four Conditions}
+    Linear encoder, linear decoder, squared-error loss, and the
+    $\frac{1}{\sqrt m}$ zero-mean normalisation. Drop any one (e.g.\ use a
+    sigmoid encoder) and the equivalence no longer holds.
+  \end{block}
+\end{frame}
+
+%==================================================================
+\section{Regularisation in Autoencoders}
+%==================================================================
+
+\begin{frame}[shrink=10]{Why Regularisation is Needed}
+  \begin{block}{Overfitting and Capacity}
+    More learnable parameters $\Rightarrow$ more overfitting
+    $\Rightarrow$ less generalisation. An overcomplete autoencoder
+    ($\dim(\mathbf{h}) \geq \dim(\mathbf{x})$) has many parameters and can
+    simply learn to \textbf{copy} $\mathbf{x}_i \to \mathbf{h} \to \hat{\mathbf{x}}_i$.
+  \end{block}
+
+  \begin{block}{Even Undercomplete Autoencoders Can Overfit}
+    Consider a $100\times100$ image: $n \approx 10^4$ inputs with a code
+    $k = 1000$. Although $k < n$, the model \emph{still} has a very large
+    number of parameters. High-dimensional inputs with much redundancy mean
+    that even shrinking the input still leaves a large parameter count, so
+    poor regularisation can occur even in the undercomplete case. It is a
+    \emph{more serious} problem for overcomplete autoencoders.
+  \end{block}
+
+  \begin{exampleblock}{The Fix}
+    To avoid poor generalisation we introduce \textbf{regularisation}. The
+    simplest solution is to add an $L_2$ penalty to the objective:
+    \[
+      \min_{\theta,W,W^{*},\mathbf{b},\mathbf{c}}
+        \frac{1}{m}\sum_{i=1}^m\sum_{j=1}^n
+        (\hat{x}_{ij}-x_{ij})^2
+        \;+\; \boxed{\lambda\|\theta\|^2}
+    \]
+    The penalty stops weights from growing; it does not give the model
+    enough freedom to overfit / memorise training data, so we hope it
+    generalises well on test data.
+  \end{exampleblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Weight Tying}
+  \begin{block}{Tie Encoder and Decoder Weights}
+    A second trick: force the decoder weights to be the transpose of the
+    encoder weights,
+    \[
+      \boxed{\;W^{*} = W^{\top}\;}
+      \qquad (W \in \mathbb{R}^{k\times d},\; W^{*}\in\mathbb{R}^{d\times k}).
+    \]
+    This is enforced as a hard constraint: the same weight matrix is
+    learned in such a way that it works at \emph{both} the encoder and the
+    decoder.
+  \end{block}
+
+  \begin{block}{Why It Regularises}
+    Tying \textbf{halves} the number of free parameters
+    ($2dk \to dk$). Fewer parameters $\Rightarrow$ may generalise better.
+    Geometrically, the encoder projects onto feature directions and the
+    decoder reconstructs from those \emph{same} directions; this reduces
+    freedom and acts as regularisation. It is commonly used for
+    autoencoders.
+  \end{block}
+
+  \begin{exampleblock}{Implementation Note}
+    $L_2$ regularisation is trivial to implement: it just adds a term
+    $\lambda w$ (or $\alpha w$) to the gradient $\partial L/\partial w$,
+    and similarly for the other parameters.
+  \end{exampleblock}
+\end{frame}
+
+%==================================================================
+\section{Denoising Autoencoders}
+%==================================================================
+
+\begin{frame}[shrink=10]{The Denoising Idea}
+  \begin{block}{Corrupt the Input}
+    A denoising autoencoder \textbf{corrupts} the input data using a
+    probabilistic process $P(\tilde{x}_{ij}\mid x_{ij})$ \emph{before}
+    feeding it to the network. A simple corruption used in practice:
+    \[
+      P(\tilde{x}_{ij}=0\mid x_{ij}) = q,
+      \qquad
+      P(\tilde{x}_{ij}=x_{ij}\mid x_{ij}) = 1-q.
+    \]
+    With probability $q$ each input is flipped to $0$; with probability
+    $1-q$ it is retained as is.
+  \end{block}
+
+  \begin{block}{The Objective Stays the Same}
+    Crucially, the objective is still to reconstruct the \emph{original,
+    uncorrupted} $\mathbf{x}_i$:
+    \[
+      \arg\min_{\theta}\;
+        \frac{1}{m}\sum_{i=1}^m\sum_{j=1}^n
+        \bigl(\hat{x}_{ij} - x_{ij}\bigr)^2
+    \]
+    The network receives $\tilde{\mathbf{x}}_i$ but is graded against
+    $\mathbf{x}_i$.
+  \end{block}
+
+  \begin{alertblock}{Effect}
+    This is a form of regularisation that makes the representation
+    \textbf{more robust}.
+  \end{alertblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Why Denoising Helps}
+  \begin{block}{The Network Can No Longer Just Copy}
+    With corruption, copying $\tilde{\mathbf{x}}_i \to \mathbf{h} \to
+    \hat{\mathbf{x}}_i$ no longer minimises the objective: a copied
+    corrupted pixel will not match the clean target, incurring error.
+  \end{block}
+
+  \begin{block}{It Must Learn Structure}
+    Instead the model must learn to reconstruct a corrupted $x_{ij}$
+    \emph{correctly} by relying on its \textbf{interaction with other
+    elements} of $\mathbf{x}_i$. For example, a missing pixel must be
+    inferred from neighbouring pixels. It therefore has to capture the
+    true characteristics of the data, not memorise it.
+  \end{block}
+
+  \begin{exampleblock}{Train vs.\ Test}
+    Because copying is penalised, the model can no longer get away by
+    memorising the data --- yet at test time (clean inputs) it still works,
+    because it learned genuine structure during training. Denoising is thus
+    a kind of regularisation.
+  \end{exampleblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Application: Handwritten Digit Recognition}
+  \begin{block}{Setup}
+    MNIST-style digits: each image is $28\times28 = 784$ pixels, so
+    $\mathbf{x}_i \in \mathbb{R}^{784}$, and labels are $0,\ldots,9$.
+  \end{block}
+
+  \begin{block}{Basic Approach vs.\ Autoencoder Approach}
+    \begin{itemize}\setlength\itemsep{4pt}
+      \item \textbf{Basic:} feed the $784$ raw pixels directly to a
+            classifier. Requires manual feature engineering and is hard.
+      \item \textbf{Autoencoder approach:} first learn the important
+            characteristics of the data with an autoencoder, obtaining a
+            \emph{better, smaller} representation $\mathbf{h}\in\mathbb{R}^{d}$
+            ($d < 784$). No feature engineering needed.
+    \end{itemize}
+  \end{block}
+
+  \begin{exampleblock}{Pipeline}
+    Train the autoencoder $\to$ reuse the encoder neural network to map
+    each image to its code $\mathbf{h}$ $\to$ feed the better
+    representation to a multi-class SVM. Using a good learned
+    representation makes the downstream classification far easier than
+    feeding raw pixels. (Downside: less explainability.)
+  \end{exampleblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Visualising an Autoencoder: Neurons as Filters}
+  \begin{block}{A Neuron is a Filter}
+    Each hidden neuron can be viewed as a \textbf{filter} that fires (gets
+    maximally activated) for a certain configuration of the input. For the
+    first hidden neuron (ignoring bias),
+    \[
+      h_1 = \sigma\bigl(\mathbf{w}_1^{\top}\mathbf{x}_i\bigr),
+    \]
+    where $\mathbf{w}_1$ is the trained weight vector connecting to that
+    neuron.
+  \end{block}
+
+  \begin{block}{Which Input Maximises a Neuron?}
+    Training is done, so $\mathbf{w}_1$ is fixed. We ask: \emph{what input
+    $\mathbf{x}_i$ maximally fires this neuron?} Assume inputs are
+    normalised, $\|\mathbf{x}_i\|=1$:
+    \[
+      \max_{\mathbf{x}_i}\; \mathbf{w}_1^{\top}\mathbf{x}_i
+      \quad\text{s.t.}\quad
+      \|\mathbf{x}_i\|^2 = \mathbf{x}_i^{\top}\mathbf{x}_i = 1.
+    \]
+    A dot product $\mathbf{w}_1^{\top}\mathbf{x}_i =
+    \|\mathbf{w}_1\|\|\mathbf{x}_i\|\cos\theta$ is maximised when
+    $\cos\theta = 1$, i.e.\ both vectors point in the \textbf{same
+    direction}.
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{The Maximally-Activating Input}
+  \begin{block}{Solving the Constrained Maximisation}
+    With the constraint $\|\mathbf{x}_i\|=1$, Cauchy--Schwarz gives
+    $\mathbf{w}_1^{\top}\mathbf{x}_i \leq \|\mathbf{w}_1\|$, with equality
+    when $\mathbf{x}_i \propto \mathbf{w}_1$. Solving for $\mathbf{x}_i =
+    c\,\mathbf{w}_1$ under $\|\mathbf{x}_i\|=1$ gives $c = 1/\|\mathbf{w}_1\|$,
+    so
+    \[
+      \boxed{\;
+        \mathbf{x}_i = \frac{\mathbf{w}_1}{\sqrt{\mathbf{w}_1^{\top}\mathbf{w}_1}}
+      \;}
+    \]
+    More generally, the inputs
+    $\mathbf{x}_i = \dfrac{\mathbf{w}_l}{\sqrt{\mathbf{w}_l^{\top}\mathbf{w}_l}}$
+    cause hidden neurons $l=1,\ldots,k$ to maximally fire.
+  \end{block}
+
+  \begin{exampleblock}{Reading the Filters}
+    Plotting these maximally-activating images (reshaped to $28\times28$)
+    reveals the patterns each neuron detects. For a vanilla autoencoder
+    these resemble pen-strokes / parts of digits; comparing them across
+    different autoencoders shows what each model has learned.
+  \end{exampleblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Denoising Filters: Pen-Stroke Detectors}
+  \begin{block}{Empirical Observation}
+    The hidden neurons of a denoising autoencoder act like
+    \textbf{pen-stroke detectors}. For example, a highlighted neuron may
+    respond to a stroke in the back region that one would expect in a
+    `$0$', `$2$', `$3$', `$8$' or `$9$'.
+  \end{block}
+
+  \begin{block}{Effect of Noise Level}
+    As the corruption noise $q$ \emph{increases}, the learned filters
+    become \textbf{wider}. The reason: the neuron must rely on a larger set
+    of adjacent pixels to feel confident about a stroke, since any single
+    pixel may have been corrupted. A vanilla (no-noise) autoencoder does
+    not learn many such interpretable patterns and relies more heavily on a
+    few weights.
+  \end{block}
+
+  \begin{exampleblock}{Gaussian Corruption}
+    Besides flipping pixels to zero, another corruption process adds
+    Gaussian noise to the input:
+    \[
+      \tilde{x}_{ij} = x_{ij} + \mathcal{N}(0,1).
+    \]
+    Empirically, with Gaussian noise the AE hidden neurons behave like
+    edge detectors, whereas a weight-decay-only filter does not capture
+    anything special like edges.
+  \end{exampleblock}
+\end{frame}
+
+%==================================================================
+\section{Sparse Autoencoders}
+%==================================================================
+
+\begin{frame}[shrink=10]{Sparsity: Keep Most Neurons Inactive}
+  \begin{block}{Activation of a Sigmoid Neuron}
+    A hidden neuron with sigmoid activation outputs a value in $(0,1)$. We
+    say it is \textbf{activated} when its output is close to $1$ and
+    \textbf{inactive} when close to $0$. A \emph{sparse} autoencoder tries
+    to ensure each neuron is inactive most of the time.
+  \end{block}
+
+  \begin{block}{Average Activation}
+    The average activation of hidden unit $l$ over the dataset is
+    \[
+      \hat{\rho}_l = \frac{1}{m}\sum_{i=1}^{m} h(\mathbf{x}_i)_l .
+    \]
+    If unit $l$ is sparse (mostly inactive) then $\hat{\rho}_l \to 0$.
+  \end{block}
+
+  \begin{alertblock}{The Constraint}
+    A sparse autoencoder uses a small \textbf{sparsity parameter} $\rho$
+    (typically close to zero, e.g.\ $0.005$) and enforces
+    $\boxed{\hat{\rho}_l = \rho}$ for every hidden unit $l$.
+    Intuition: if a neuron fires for \emph{every} input it carries no
+    discriminative power; forcing it to fire only for some inputs makes it
+    capture a specific pattern. Any kind of regularisation restricts the
+    freedom of parameters --- overfitting happens because of too much
+    freedom.
+  \end{alertblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{The Sparsity (KL-Divergence) Penalty}
+  \begin{block}{Adding a Term to the Objective}
+    To enforce $\hat{\rho}_l = \rho$ we add the following regularisation
+    term (a sum of KL divergences) to the loss:
+    \[
+      \Omega(\theta)
+        = \sum_{l=1}^{k}
+          \rho\log\frac{\rho}{\hat{\rho}_l}
+          + (1-\rho)\log\frac{1-\rho}{1-\hat{\rho}_l}
+    \]
+    The full regularised objective is
+    \[
+      \boxed{\;\widetilde{\mathcal L}(\theta) = \mathcal L(\theta) + \Omega(\theta)\;}
+    \]
+    where $\mathcal L(\theta)$ is the usual squared-error / cross-entropy
+    reconstruction loss.
+  \end{block}
+
+  \begin{block}{Minimum of the Penalty}
+    $\Omega$ reaches its minimum value (of $0$) exactly when
+    $\boxed{\hat{\rho}_l = \rho}$ for all $l$ --- it is the KL divergence
+    between two Bernoulli distributions, which is $0$ iff they coincide,
+    and grows sharply as $\hat{\rho}_l$ departs from $\rho$.
+  \end{block}
+
+  \begin{exampleblock}{KL Divergence Intuition}
+    KL divergence measures how much information is lost when one
+    probability ($\hat{\rho}_l$, the neuron's empirical firing rate) is
+    used to approximate another ($\rho$, the desired tiny firing rate).
+  \end{exampleblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Back-Propagating the Sparsity Penalty}
+  \begin{block}{Derivative w.r.t.\ the Average Activation}
+    Writing $-\Omega$ in expanded form and differentiating w.r.t.\
+    $\hat{\rho}_l$:
+    \[
+      \frac{\partial\,\Omega(\theta)}{\partial \hat{\rho}_l}
+        = -\frac{\rho}{\hat{\rho}_l}
+          + \frac{1-\rho}{1-\hat{\rho}_l}.
+    \]
+  \end{block}
+
+  \begin{block}{Chain Rule to the Weights}
+    For each hidden neuron $l$ we need
+    $\dfrac{\partial\Omega}{\partial W}$ via
+    $\hat{\rho}_l \to h_i \to W$:
+    \[
+      \frac{\partial\Omega(\theta)}{\partial W}
+        = \frac{\partial\Omega(\theta)}{\partial\hat{\rho}_l}\,
+          \frac{\partial\hat{\rho}_l}{\partial W}.
+    \]
+    For a single weight $W_{jl}$, with
+    $\hat{\rho}_l = \frac1m\sum_{i} g(\mathbf{w}_l^{\top}\mathbf{x}_i + b_l)$,
+    \[
+      \frac{\partial\hat{\rho}_l}{\partial W_{jl}}
+        = \frac{1}{m}\sum_{i=1}^{m}
+          g'\!\bigl(\mathbf{w}_l^{\top}\mathbf{x}_i + b_l\bigr)\,x_{ij},
+      \quad\Rightarrow\quad
+      \frac{\partial\hat{\rho}_l}{\partial \mathbf{w}_l}
+        = \mathbf{x}_i\bigl(g'(\mathbf{w}_l^{\top}\mathbf{x}_i+b_l)\bigr)^{\!\top}.
+    \]
+  \end{block}
+
+  \begin{alertblock}{Final Gradient}
+    \[
+      \frac{\partial\,\widetilde{\mathcal L}(\theta)}{\partial W}
+        = \frac{\partial\,\mathcal L(\theta)}{\partial W}
+          + \frac{\partial\,\Omega(\theta)}{\partial W}.
+    \]
+    Sparsity prevents the network from memorising: even with many hidden
+    neurons, only a few are allowed to fire for any given input, so the
+    model is forced to learn meaningful patterns.
+  \end{alertblock}
+\end{frame}
+
+%==================================================================
+\section{Contractive Autoencoders}
+%==================================================================
+
+\begin{frame}[shrink=10]{The Contractive Penalty}
+  \begin{block}{Goal}
+    A contractive autoencoder also tries to prevent an overcomplete
+    autoencoder from learning the identity function. It does so by adding a
+    \textbf{Jacobian} penalty to the loss:
+    \[
+      \Omega = \bigl\| J_{\mathbf{x}}(\mathbf{h}) \bigr\|_F^{2}
+      \qquad (\text{Frobenius norm of the Jacobian}).
+    \]
+  \end{block}
+
+  \begin{block}{What the Jacobian Looks Like}
+    If the input has $n$ dimensions and the hidden layer has $k$
+    dimensions, $J_{\mathbf{x}}(\mathbf{h}) \in \mathbb{R}^{k\times n}$:
+    \[
+      J_{\mathbf{x}}(\mathbf{h}) =
+      \begin{bmatrix}
+        \dfrac{\partial h_1}{\partial x_1} & \cdots & \dfrac{\partial h_1}{\partial x_n}\\[6pt]
+        \dfrac{\partial h_2}{\partial x_1} & \cdots & \dfrac{\partial h_2}{\partial x_n}\\[6pt]
+        \vdots & & \vdots\\[2pt]
+        \dfrac{\partial h_k}{\partial x_1} & \cdots & \dfrac{\partial h_k}{\partial x_n}
+      \end{bmatrix}
+    \]
+    The $(l,j)$ entry captures the variation in the output of the $l$-th
+    neuron with a small variation in the $j$-th input.
+  \end{block}
+
+  \begin{block}{The Penalty in Sum Form}
+    \[
+      \bigl\| J_{\mathbf{x}}(\mathbf{h}) \bigr\|_F^{2}
+        = \sum_{j=1}^{n}\sum_{l=1}^{k}
+          \Bigl(\frac{\partial h_l}{\partial x_j}\Bigr)^{\!2},
+      \qquad
+      \min_{\theta}\; \mathcal L(\theta) + \Omega(\theta).
+    \]
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Intuition: Two Contradicting Objectives}
+  \begin{block}{What $\partial h_l/\partial x_j = 0$ Means}
+    A small Jacobian entry $\partial h_l/\partial x_j \approx 0$ means the
+    neuron is \textbf{not sensitive} to variations in input $x_j$. The
+    contractive penalty pushes the hidden representation to be insensitive
+    to input changes --- it wants $\mathbf{h}$ to stay put if we perturb
+    $\mathbf{x}$.
+  \end{block}
+
+  \begin{alertblock}{The Apparent Contradiction}
+    But the reconstruction loss $\mathcal L(\theta)$ \emph{requires}
+    $\mathbf{h}$ to capture variation in the input (otherwise it cannot
+    reconstruct). So we have \textbf{two contradicting objectives}:
+    \begin{itemize}\setlength\itemsep{2pt}
+      \item $\mathcal L(\theta)$: \emph{capture} important variation in the data,
+      \item $\Omega(\theta)$: \emph{do not} capture variation in the data.
+    \end{itemize}
+  \end{alertblock}
+
+  \begin{block}{Resolution: Capture Only Important Variation}
+    By pitting these two objectives against each other, we ensure
+    $\mathbf{h}$ is sensitive to \emph{only the very important variations}
+    observed in the training data, and insensitive to unimportant
+    (noisy) directions.
+    \[
+      \boxed{\text{Trade-off: capture only the very important variation in the data.}}
+    \]
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Contractive AE: The PCA Geometry}
+  \begin{block}{Sensitive Along High-Variance Directions Only}
+    Consider the variation in the data along two directions $\mathbf{u}_1$
+    (high variance) and $\mathbf{u}_2$ (low variance, essentially noise):
+    \begin{itemize}\setlength\itemsep{3pt}
+      \item It makes sense to let a neuron be \textbf{sensitive} to
+            variation along $\mathbf{u}_1$ (important for reconstruction).
+      \item It makes sense to \textbf{inhibit} sensitivity to variation
+            along $\mathbf{u}_2$ (small, noisy, unimportant).
+    \end{itemize}
+    By doing so we balance the contradicting goals of good reconstruction
+    and low sensitivity.
+  \end{block}
+
+  \begin{exampleblock}{Summary of the Regularised Autoencoders}
+    \begin{itemize}\setlength\itemsep{2pt}
+      \item \textbf{PCA $\equiv$ linear AE:} $\min\|X-HW^{*}\|_F^2$,
+            $H = X V_{\cdot,\le k}$, related to the SVD $X = U\Sigma V^{\top}$.
+      \item \textbf{$L_2$ / weight decay:} $\Omega(\theta) = \lambda\|\theta\|^2$,
+            tie weights $W^{*}=W^{\top}$.
+      \item \textbf{Sparse:} $\Omega(\theta) = \sum_l \rho\log\frac{\rho}{\hat\rho_l}
+            + (1-\rho)\log\frac{1-\rho}{1-\hat\rho_l}$.
+      \item \textbf{Denoising:} corrupt with $P(\tilde{x}_{ij}\mid x_{ij})$.
+      \item \textbf{Contractive:} $\Omega(\theta)
+            = \sum_{j,l}\bigl(\partial h_l/\partial x_j\bigr)^2$.
+    \end{itemize}
+  \end{exampleblock}
+\end{frame}
+
+%==================================================================
+\section{The Bias--Variance Trade-off}
+%==================================================================
+
+\begin{frame}[shrink=10]{Setup: Fitting Two Models}
+  \begin{block}{The Experiment}
+    We fit a curve to a set of points sampled from a true (unknown)
+    sinusoidal function. We compare two models:
+    \[
+      \text{Simple: } y = \hat f(x) = w_1 x + w_0 \;(\text{degree }1),
+      \qquad
+      \text{Complex: } y = \hat f(x) = \sum_{i=1}^{25} w_i x^i + w_0 \;(\text{degree }25).
+    \]
+    In both cases we make an assumption about the form, with no idea of the
+    true relation $f(x)$.
+  \end{block}
+
+  \begin{block}{Repeated Sampling}
+    We sample (say) $25$ points from the training data and train a simple
+    and a complex model. We repeat $k$ times --- each model is trained on a
+    \emph{different} sample of training data.
+  \end{block}
+
+  \begin{exampleblock}{Observations}
+    \begin{itemize}\setlength\itemsep{3pt}
+      \item \textbf{Simple models} trained on different samples do not
+            differ much from each other (low spread), but all lie far from
+            the true sinusoid $\Rightarrow$ \textbf{underfitting}.
+      \item \textbf{Complex models} trained on different samples are very
+            different from each other (high spread) $\Rightarrow$
+            \textbf{overfitting}; different data $\Rightarrow$ very
+            different output.
+    \end{itemize}
+  \end{exampleblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Defining Bias and Variance}
+  \begin{block}{Bias}
+    Let $f(x)$ be the true model and $\hat f(x)$ our estimate. The
+    \textbf{bias} measures how far the \emph{average} model is from the
+    truth:
+    \[
+      \mathrm{Bias}\bigl(\hat f(x)\bigr)
+        = \mathbb{E}\bigl[\hat f(x)\bigr] - f(x).
+    \]
+    The simple model's average (blue line) is far from the true sinusoid
+    $\Rightarrow$ \textbf{high bias}. The complex model's average is close
+    $\Rightarrow$ \textbf{low bias}.
+  \end{block}
+
+  \begin{block}{Variance}
+    The \textbf{variance} measures how much the estimate spreads across
+    different training samples:
+    \[
+      \mathrm{Var}\bigl(\hat f(x)\bigr)
+        = \mathbb{E}\Bigl[\bigl(\hat f(x) - \mathbb{E}[\hat f(x)]\bigr)^2\Bigr].
+    \]
+    Roughly, it tells us how much the different $\hat f(x)$'s (trained on
+    different samples) differ from each other. Simple model: \textbf{low
+    variance}; complex model: \textbf{high variance}.
+  \end{block}
+
+  \begin{alertblock}{Informal Summary}
+    Simple model: \textbf{high bias, low variance}.\quad
+    Complex model: \textbf{low bias, high variance}.\quad
+    There is always a \textbf{trade-off}; both bias and variance contribute
+    to the mean-squared error (MSE).
+  \end{alertblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{The Bias--Variance Decomposition}
+  \begin{block}{Statement}
+    For a new point with $y = f(x)+\varepsilon$, $\varepsilon\sim\mathcal N(0,\sigma^2)$,
+    the expected squared prediction error decomposes as
+    \[
+      \boxed{\;
+        \mathbb{E}\bigl[(y - \hat f(x))^2\bigr]
+          = \underbrace{\mathrm{Bias}^2}_{}
+            + \underbrace{\mathrm{Variance}}_{}
+            + \underbrace{\sigma^2}_{\text{irreducible noise}}
+      \;}
+    \]
+  \end{block}
+
+  \begin{block}{Proof Sketch}
+    Write $y - \hat f = \bigl(f - \mathbb{E}[\hat f]\bigr)
+    + \bigl(\mathbb{E}[\hat f] - \hat f\bigr) + \varepsilon$.
+    Expanding the square and taking expectations, the cross terms vanish
+    because (i) $\mathbb{E}[\varepsilon]=0$ and $\varepsilon$ is independent
+    of $\hat f$, and (ii) $\mathbb{E}\bigl[\mathbb{E}[\hat f]-\hat f\bigr]=0$.
+    Using
+    \[
+      A = f - \mathbb{E}[\hat f],\quad
+      B = \varepsilon,\quad
+      C = \mathbb{E}[\hat f] - \hat f,
+    \]
+    only $\mathbb{E}[A^2]=\mathrm{Bias}^2$, $\mathbb{E}[B^2]=\sigma^2$,
+    $\mathbb{E}[C^2]=\mathrm{Variance}$ survive.
+  \end{block}
+
+  \begin{exampleblock}{Conclusion}
+    \[
+      \text{Expected error} = \mathrm{Bias}^2 + \mathrm{Variance}
+        + \text{Irreducible Noise}.
+    \]
+    Reducing bias (more complexity) increases variance and vice versa ---
+    we must balance the two.
+  \end{exampleblock}
+\end{frame}
+
+%==================================================================
+\section{Training Error vs Test Error}
+%==================================================================
+
+\begin{frame}[shrink=10]{The Two Errors}
+  \begin{block}{Train Error and Test Error}
+    The parameters of $\hat f(x)$ are trained on a training set
+    $\{(x_i,y_i)\}_{i=1}^{n}$. At test time we evaluate on a
+    \emph{validation/unseen} set not used for training. This gives two
+    quantities:
+    \[
+      \text{train}_{\text{err}} = \frac{1}{n}\sum_{i=1}^{n}\bigl(y_i - \hat f(x_i)\bigr)^2,
+      \quad
+      \text{test}_{\text{err}} = \frac{1}{m}\sum_{i=n+1}^{n+m}\bigl(y_i - \hat f(x_i)\bigr)^2.
+    \]
+    As model complexity rises, train error becomes overly optimistic and
+    gives a wrong picture of how close $\hat f$ is to $f$. The validation
+    error gives the real picture.
+  \end{block}
+
+  \begin{block}{True Error}
+    For an unseen point we want the \textbf{true error}
+    $\mathbb{E}\bigl[(\hat f(x_i) - f(x_i))^2\bigr]$. We cannot estimate it
+    directly because we do not know $f$. We estimate it empirically using
+    observations $y_i$ and predictions $\hat y_i$.
+  \end{block}
+
+  \begin{alertblock}{Model Used}
+    $D = \{(x_i,y_i)\}_{i=1}^{m+n}$ with $y_i = f(x_i) + \varepsilon_i$,
+    $\varepsilon \sim \mathcal N(0,\sigma^2)$, and $\hat f$ trained on
+    $T \subset D$ (training data), giving predictions $\hat y_i = \hat f(x_i)$.
+  \end{alertblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Relating Empirical Error to True Error}
+  \begin{block}{Empirical Expectation}
+    The empirical squared error over observations is
+    \[
+      \mathbb{E}\bigl[(\hat y_i - y_i)^2\bigr]
+        = \frac{1}{m}\sum_{i=1}^{m}(\hat y_i - y_i)^2.
+    \]
+    (Analogy: to estimate expected goals $\mathbb{E}[\text{goals}]$ over
+    $k$ matches we use $\frac1k\sum_i g_i$.)
+  \end{block}
+
+  \begin{block}{Substituting $y_i = f(x_i)+\varepsilon_i$}
+    Expanding $\mathbb{E}[(\hat y_i - y_i)^2]$ with $\hat y_i = \hat f(x_i)$:
+    \begin{align*}
+      \mathbb{E}\bigl[(\hat f(x_i) - f(x_i))^2\bigr]
+        &= \mathbb{E}\bigl[(\hat y_i - y_i)^2\bigr]
+           - \mathbb{E}[\varepsilon_i^2]
+           + 2\,\mathbb{E}\bigl[\varepsilon_i\,(\hat f(x_i) - f(x_i))\bigr].
+    \end{align*}
+    We can empirically evaluate the first RHS term using observations. The
+    last term is a \textbf{covariance} between $\varepsilon_i$ and
+    $\hat f(x_i)-f(x_i)$ (since $\mathbb{E}[\varepsilon_i]=0$).
+  \end{block}
+
+  \begin{exampleblock}{Covariance Reminder}
+    $\mathrm{Cov}(x,y) = \mathbb{E}[(x-\mu_x)(y-\mu_y)] = \mathbb{E}[xy] -
+    \mu_x\mu_y$; with $\mu_{\varepsilon}=0$ the cross term is exactly
+    $\mathbb{E}[\varepsilon_i(\hat f(x_i)-f(x_i))]$.
+  \end{exampleblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Case 1 --- Using Test Observations}
+  \begin{block}{The Key Independence}
+    With \textbf{test} data, none of the test observations participated in
+    estimating $\hat f$ (its parameters were learned only on training
+    data). Therefore the test noise $\varepsilon_i$ is \textbf{independent}
+    of $\hat f(x_i) - f(x_i)$:
+    \[
+      \varepsilon_i \perp \bigl(\hat f(x_i) - f(x_i)\bigr).
+    \]
+  \end{block}
+
+  \begin{block}{The Cross Term Vanishes}
+    For independent variables $\mathbb{E}[XY] = \mathbb{E}[X]\mathbb{E}[Y]$,
+    so
+    \[
+      \mathbb{E}\bigl[\varepsilon_i\,(\hat f(x_i)-f(x_i))\bigr]
+        = \underbrace{\mathbb{E}[\varepsilon_i]}_{=0}\,
+          \mathbb{E}\bigl[\hat f(x_i)-f(x_i)\bigr]
+        = 0.
+    \]
+  \end{block}
+
+  \begin{alertblock}{Result}
+    \[
+      \boxed{\;\text{true error} = \text{empirical test error} + \text{small constant}\;}
+    \]
+    i.e.\ $\mathbb{E}[(\hat f(x_i)-f(x_i))^2]
+      = \frac{1}{m}\sum_{i=n+1}^{n+m}(\hat y_i - y_i)^2 - \frac1m\sum\varepsilon_i^2$.
+    The test error is close to the true error, differing only by a small
+    constant. That is why we use a validation set.
+  \end{alertblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Case 2 --- Using Training Observations (Optimism)}
+  \begin{block}{No Independence Here}
+    With \textbf{training} data, $\varepsilon_i$ \emph{was} used to estimate
+    the parameters of $\hat f(x)$. Hence $\varepsilon_i$ is correlated with
+    $\hat f(x_i)$, and
+    \[
+      \mathbb{E}\bigl[\varepsilon_i\,(\hat f(x_i)-f(x_i))\bigr]
+        \neq \mathbb{E}[\varepsilon_i]\,\mathbb{E}\bigl[\hat f(x_i)-f(x_i)\bigr]
+        \neq 0.
+    \]
+  \end{block}
+
+  \begin{block}{Consequence: Optimism}
+    The covariance term is positive, so the empirical \textbf{train error
+    is smaller} than the true error --- it does not give the true picture
+    of the error. The training error is \textbf{overly optimistic}.
+  \end{block}
+
+  \begin{exampleblock}{Practical Rule}
+    Even gradient-based optimisers (SGD, Adam) make stationary
+    distribution assumptions about the noise; if those hold, the noise is
+    zero-mean and the analysis carries through. Regardless,
+    \[
+      \boxed{\text{Always use a validation set (independent of training) to estimate error.}}
+    \]
+  \end{exampleblock}
+\end{frame}
+
+%==================================================================
+\section{True Error and Model Complexity}
+%==================================================================
+
+\begin{frame}[shrink=10]{Quantifying the Optimism via Stein's Lemma}
+  \begin{block}{Stein's Lemma Result}
+    Using Stein's lemma (with some algebra) one can show the train-error
+    covariance term equals
+    \[
+      \boxed{\;
+        \frac{1}{n}\sum_{i=1}^{n}\varepsilon_i\bigl(\hat f(x_i) - f(x_i)\bigr)
+          = \frac{\sigma^2}{n}\sum_{i=1}^{n}\frac{\partial \hat f(x_i)}{\partial y_i}
+      \;}
+    \]
+    (Stirling's approximation $n! \approx \sqrt{2\pi n}\,(n/e)^n$ is used in
+    the derivation of related results.)
+  \end{block}
+
+  \begin{block}{When is $\partial\hat f(x_i)/\partial y_i$ Large?}
+    It is large when a \emph{small} change in the observation $y_i$ causes a
+    \emph{large} change in the estimate $\hat f$. A \textbf{complex} model
+    is more sensitive to changes in the observations; a \textbf{simple}
+    model is less sensitive. So this derivative directly measures model
+    complexity.
+  \end{block}
+
+  \begin{exampleblock}{Verification}
+    Fit a simple and a complex model to data, then change one data point
+    and retrain. The simple model barely changes; the complex model changes
+    a lot --- confirming complex models are more sensitive.
+  \end{exampleblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{The Master Equation of Regularisation}
+  \begin{block}{True Error = Train Error + Complexity}
+    Combining the pieces:
+    \[
+      \boxed{\;
+        \text{true error}
+          = \text{empirical train error}
+            + \text{small constant}
+            + \Omega(\text{model complexity})
+      \;}
+    \]
+    where $\Omega(\theta)$ approximates
+    $\dfrac{\sigma^2}{n}\sum_{i=1}^{n}\dfrac{\partial\hat f(x_i)}{\partial y_i}$;
+    it is high for complex models, small for simple models.
+  \end{block}
+
+  \begin{block}{What We Should Actually Minimise}
+    Instead of minimising the training error $\mathcal L_{\text{train}}(\theta)$
+    alone, we should minimise
+    \[
+      \min_{\theta}\;
+        \underbrace{\mathcal L_{\text{train}}(\theta) + \Omega(\theta)}_{\mathcal L(\theta)}.
+    \]
+    $\Omega(\theta)$ should ensure the model has \emph{reasonable}
+    complexity, so the model generalises best on test data. This is the
+    \textbf{basis for all regularisation methods}.
+  \end{block}
+
+  \begin{alertblock}{Why We Care (Universal Approximation)}
+    By the Universal Approximation Theorem, deep neural networks are highly
+    complex models with many parameters and non-linearities; it is easy for
+    them to overfit and drive training error to zero. Hence we need some
+    form of regularisation.
+  \end{alertblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{The Sweet Spot}
+  \begin{block}{Train Error vs Test Error vs Complexity}
+    As model complexity increases:
+    \begin{itemize}\setlength\itemsep{3pt}
+      \item \textbf{Train error} decreases monotonically (towards $0$).
+      \item \textbf{Test error} first decreases (less bias) then increases
+            (more variance) --- a U-shape.
+    \end{itemize}
+    The minimum of the test-error curve is the \textbf{sweet spot}: the
+    ideal model complexity, achieved by tuning $\Omega(\theta)$.
+  \end{block}
+
+  \begin{exampleblock}{Different Forms of Regularisation}
+    All of the following are instances of adding an $\Omega(\theta)$ that
+    controls complexity:
+    \begin{itemize}\setlength\itemsep{1pt}
+      \item $L_2$ regularisation (weight decay)
+      \item Dataset augmentation
+      \item Parameter sharing and tying
+      \item Adding noise to the inputs
+      \item Adding noise to the outputs (label smoothing)
+      \item Early stopping
+      \item Ensemble methods
+      \item Dropout
+    \end{itemize}
+    We treat each in turn.
+  \end{exampleblock}
+\end{frame}
+
+%==================================================================
+\section{$L_2$ Regularisation}
+%==================================================================
+
+\begin{frame}[shrink=10]{$L_2$ Regularisation: Setup}
+  \begin{block}{Regularised Loss}
+    \[
+      \widetilde{\mathcal L}(\mathbf{w})
+        = \underbrace{\mathcal L(\mathbf{w})}_{\text{empirical train error}}
+          + \frac{\alpha}{2}\|\mathbf{w}\|^2 .
+    \]
+    The penalty relates to model complexity by \emph{reducing the freedom}
+    of the weights.
+  \end{block}
+
+  \begin{block}{Gradient and Update}
+    \[
+      \nabla\widetilde{\mathcal L}(\mathbf{w}) = \nabla\mathcal L(\mathbf{w}) + \alpha\mathbf{w},
+      \qquad
+      \mathbf{w}_{t+1} = \mathbf{w}_t - \eta\nabla\mathcal L(\mathbf{w}_t) - \eta\alpha\mathbf{w}_t.
+    \]
+    This requires only a very small modification to the code: subtract an
+    extra $\eta\alpha\mathbf{w}_t$ each step (weight decay).
+  \end{block}
+
+  \begin{block}{Taylor Expansion around the Unregularised Optimum}
+    Let $\mathbf{w}^{*}$ be optimal for the \emph{unregularised} loss, so
+    $\nabla\mathcal L(\mathbf{w}^{*}) = 0$. Expanding to second order with
+    Hessian $H$:
+    \[
+      \mathcal L(\mathbf{w}) \approx \mathcal L(\mathbf{w}^{*})
+        + \tfrac12(\mathbf{w}-\mathbf{w}^{*})^{\top}H(\mathbf{w}-\mathbf{w}^{*}),
+      \qquad
+      \nabla\mathcal L(\mathbf{w}) = H(\mathbf{w}-\mathbf{w}^{*}).
+    \]
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{$L_2$: Solving for the Regularised Optimum}
+  \begin{block}{Set the Regularised Gradient to Zero}
+    Let $\tilde{\mathbf{w}}$ be optimal for $\widetilde{\mathcal L}$, so
+    $\nabla\widetilde{\mathcal L}(\tilde{\mathbf{w}}) = 0$:
+    \[
+      \nabla\mathcal L(\tilde{\mathbf{w}}) + \alpha\tilde{\mathbf{w}}
+        = H(\tilde{\mathbf{w}}-\mathbf{w}^{*}) + \alpha\tilde{\mathbf{w}} = 0
+      \;\Rightarrow\;
+      (H+\alpha I)\tilde{\mathbf{w}} = H\mathbf{w}^{*}
+      \;\Rightarrow\;
+      \boxed{\tilde{\mathbf{w}} = (H+\alpha I)^{-1}H\mathbf{w}^{*}}
+    \]
+    As $\alpha\to 0$, $\tilde{\mathbf{w}}\to\mathbf{w}^{*}$ (no
+    regularisation). We analyse $\alpha\neq 0$.
+  \end{block}
+
+  \begin{block}{Diagonalise the Hessian}
+    Assume $H$ is symmetric PSD with $H = Q\Lambda Q^{\top}$ ($Q$
+    orthogonal, $QQ^{\top}=Q^{\top}Q=I$). Then
+    \begin{align*}
+      \tilde{\mathbf{w}}
+        &= (Q\Lambda Q^{\top} + \alpha QIQ^{\top})^{-1} Q\Lambda Q^{\top}\mathbf{w}^{*}
+         = \bigl(Q(\Lambda+\alpha I)Q^{\top}\bigr)^{-1} Q\Lambda Q^{\top}\mathbf{w}^{*}\\
+        &= Q(\Lambda+\alpha I)^{-1}Q^{\top}\,Q\Lambda Q^{\top}\mathbf{w}^{*}
+         = Q\,\underbrace{(\Lambda+\alpha I)^{-1}\Lambda}_{D}\,Q^{\top}\mathbf{w}^{*}.
+    \end{align*}
+  \end{block}
+
+  \begin{exampleblock}{Result}
+    \[
+      \boxed{\;
+        \tilde{\mathbf{w}} = Q\,(\Lambda+\alpha I)^{-1}\Lambda\,Q^{\top}\mathbf{w}^{*}
+        ,\qquad
+        D = (\Lambda+\alpha I)^{-1}\Lambda \text{ is diagonal.}
+      \;}
+    \]
+  \end{exampleblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{$L_2$: What Is Happening Geometrically}
+  \begin{block}{Rotate, Scale, Rotate Back}
+    The operation $\tilde{\mathbf{w}} = QDQ^{\top}\mathbf{w}^{*}$ does three
+    things:
+    \begin{enumerate}\setlength\itemsep{2pt}
+      \item $Q^{\top}\mathbf{w}^{*}$: rotate $\mathbf{w}^{*}$ into the
+            eigenbasis.
+      \item $D$: scale each coordinate.
+      \item $Q$: rotate back.
+    \end{enumerate}
+    If $\alpha=0$ then $D=I$ and $Q$ rotates $Q^{\top}\mathbf{w}^{*}$ back to
+    $\mathbf{w}^{*}$ (nothing changes).
+  \end{block}
+
+  \begin{block}{The Diagonal Scaling}
+    For $\alpha\neq 0$, $D = \mathrm{diag}\!\Bigl(\dfrac{d_i}{d_i+\alpha}\Bigr)$
+    where $d_i$ are the eigenvalues of $H$:
+    \[
+      d_i \gg \alpha \;\Rightarrow\; \frac{d_i}{d_i+\alpha}\approx 1
+      \quad(\text{direction kept}),\qquad
+      d_i \ll \alpha \;\Rightarrow\; \frac{d_i}{d_i+\alpha}\approx 0
+      \quad(\text{direction killed}).
+    \]
+  \end{block}
+
+  \begin{alertblock}{Interpretation}
+    The weight vector is rotated to $\tilde{\mathbf{w}}$; \emph{all}
+    elements shrink, but some shrink \emph{more} than others. Important
+    directions (large eigenvalue, large loss curvature) are retained;
+    unimportant directions are scaled down. This is exactly
+    \textbf{dimension-specific} shrinkage --- what we wanted. The effective
+    number of parameters is $\sum_{i=1}^{n}\dfrac{d_i}{d_i+\alpha} \ll n$.
+  \end{alertblock}
+\end{frame}
+
+%==================================================================
+\section{Dataset Augmentation}
+%==================================================================
+
+\begin{frame}[shrink=10]{Dataset Augmentation}
+  \begin{block}{Idea}
+    Minimising the empirical train error on a small dataset leads to
+    perfect classification of training points (overfitting). Augmentation
+    creates \emph{more} labelled data using domain knowledge of the task.
+    Given an image, we exploit the fact that certain transformations do
+    \textbf{not change the label}:
+    \begin{itemize}\setlength\itemsep{1pt}
+      \item rotate by $20^{\circ}$, by $62^{\circ}$,
+      \item shift vertically / horizontally,
+      \item blur,
+      \item change some pixels.
+    \end{itemize}
+  \end{block}
+
+  \begin{block}{Why It Works}
+    Typically \textbf{more data $\Rightarrow$ better learning}. The
+    augmented data is supervised data created using knowledge of the task.
+    It works very well for image classification / object recognition and
+    has also been shown to work for speech.
+  \end{block}
+
+  \begin{exampleblock}{Caveat}
+    For some tasks it may not be clear how to generate such label-preserving
+    data (e.g.\ some NLP tasks), where naive transformations could change
+    meaning. Augmentation must respect the semantics of the task.
+  \end{exampleblock}
+\end{frame}
+
+%==================================================================
+\section{Parameter Sharing and Tying}
+%==================================================================
+
+\begin{frame}[shrink=10]{Parameter Sharing vs.\ Parameter Tying}
+  \begin{columns}[T]
+    \column{0.48\textwidth}
+    \begin{block}{Parameter Sharing}
+      \begin{itemize}\setlength\itemsep{2pt}
+        \item Used in \textbf{CNNs}.
+        \item The same filter is applied at different positions of the
+              image.
+        \item Equivalently, the same weight matrix acts on different input
+              neurons.
+        \item Use the same parameter in multiple computations.
+      \end{itemize}
+    \end{block}
+
+    \column{0.48\textwidth}
+    \begin{block}{Parameter Tying}
+      \begin{itemize}\setlength\itemsep{2pt}
+        \item Typically used in \textbf{autoencoders}.
+        \item Encoder and decoder weights are tied.
+        \item Impose an equality constraint between parameters:
+              $W^{*} = W^{\top}$.
+      \end{itemize}
+    \end{block}
+  \end{columns}
+
+  \medskip
+
+  \begin{block}{Why Tying Regularises}
+    Tying is a specific form of sharing that \textbf{reduces the number of
+    free parameters} and acts as regularisation (it reduces model
+    complexity $\Omega(\theta)$, consistent with the Stein's-lemma view).
+    With $W \in \mathbb{R}^{k\times d}$ and $W^{*}\in\mathbb{R}^{d\times k}$,
+    tying $W^{*}=W^{\top}$ takes the parameter count from $2dk$ down to
+    $dk$ --- \textbf{half the parameters}.
+  \end{block}
+\end{frame}
+
+%==================================================================
+\section{Adding Noise to the Inputs}
+%==================================================================
+
+\begin{frame}[shrink=10]{Adding Gaussian Noise to Inputs $\equiv$ Weight Decay}
+  \begin{block}{Setup}
+    We already saw input noise in denoising autoencoders. For a simple
+    linear input--output network, adding Gaussian noise to the input is
+    equivalent to \textbf{weight decay} ($L_2$ regularisation). It can also
+    be viewed as data augmentation.
+    Let $\tilde{x}_i = x_i + \varepsilon_i$, $\varepsilon_i \sim \mathcal N(0,\sigma^2)$.
+  \end{block}
+
+  \begin{block}{Original vs.\ Noisy Output}
+    \[
+      \hat y = \sum_{i=1}^{n} w_i x_i \quad(\text{original}),
+      \qquad
+      \tilde y = \sum_{i=1}^{n} w_i \tilde{x}_i
+              = \hat y + \sum_{i=1}^{n} w_i \varepsilon_i .
+    \]
+  \end{block}
+
+  \begin{block}{Expected Squared Error with Noise}
+    \begin{align*}
+      \mathbb{E}\bigl[(\tilde y - y)^2\bigr]
+        &= \mathbb{E}\Bigl[\bigl((\hat y - y) + \textstyle\sum_i w_i\varepsilon_i\bigr)^2\Bigr]\\
+        &= \mathbb{E}[(\hat y - y)^2]
+           + 2\,\mathbb{E}\Bigl[(\hat y - y)\textstyle\sum_i w_i\varepsilon_i\Bigr]
+           + \mathbb{E}\Bigl[\bigl(\textstyle\sum_i w_i\varepsilon_i\bigr)^2\Bigr].
+    \end{align*}
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Input Noise: The Cross Term Vanishes}
+  \begin{block}{Cross Term}
+    Since $\mathbb{E}[\varepsilon_i]=0$ and $\varepsilon_i$ is independent
+    of $\hat y - y$,
+    \[
+      2\,\mathbb{E}\Bigl[(\hat y - y)\sum_i w_i\varepsilon_i\Bigr]
+        = 2\sum_i w_i\,\mathbb{E}[\hat y - y]\,\mathbb{E}[\varepsilon_i] = 0.
+    \]
+  \end{block}
+
+  \begin{block}{Noise Term}
+    Using $\mathbb{E}[\varepsilon_i\varepsilon_j]=0$ for $i\neq j$
+    (independent) and $\mathbb{E}[\varepsilon_i^2]=\sigma^2$,
+    \[
+      \mathbb{E}\Bigl[\bigl(\textstyle\sum_i w_i\varepsilon_i\bigr)^2\Bigr]
+        = \sum_{i}\sum_{j} w_i w_j\,\mathbb{E}[\varepsilon_i\varepsilon_j]
+        = \sigma^2\sum_{i=1}^{n} w_i^2 .
+    \]
+  \end{block}
+
+  \begin{alertblock}{Result}
+    \[
+      \boxed{\;
+        \mathbb{E}\bigl[(\tilde y - y)^2\bigr]
+          = \mathbb{E}\bigl[(\hat y - y)^2\bigr]
+            + \sigma^2\sum_{i=1}^{n} w_i^2
+      \;}
+    \]
+    The extra term $\sigma^2\sum_i w_i^2$ is exactly the $L_2$ norm penalty.
+    Hence \textbf{adding noise to the input is the same as $L_2$
+    regularisation}.
+  \end{alertblock}
+\end{frame}
+
+%==================================================================
+\section{Adding Noise to the Outputs (Label Smoothing)}
+%==================================================================
+
+\begin{frame}[shrink=10]{Hard Targets vs.\ Soft Targets}
+  \begin{block}{Hard Targets}
+    With one-hot labels, we minimise $\sum_{l\ge 0} p_l\log q_l$ where the
+    true distribution is $p = \{0,1,0,\ldots,0\}$ (all mass on the correct
+    class) and $q$ is the estimate. Trusting these hard labels completely
+    leads the model to drive training error to zero --- overfitting.
+  \end{block}
+
+  \begin{block}{Soft Targets (Label Smoothing)}
+    Do not trust the labels as perfectly true --- they may be noisy.
+    Instead use \textbf{soft targets}: spread a small amount of probability
+    mass $\varepsilon$ across the wrong classes,
+    \[
+      p = \Bigl\{\tfrac{\varepsilon}{k-1},\ \tfrac{\varepsilon}{k-1},\ \ldots,\ 1-\varepsilon,\ \ldots,\ \tfrac{\varepsilon}{k-1}\Bigr\},
+    \]
+    where $\varepsilon$ is the noise in the label (a small positive
+    constant) and $k$ is the number of classes.
+  \end{block}
+
+  \begin{exampleblock}{Why It Acts Like Regularisation}
+    The aim of regularisation is to not overfit the training data. Soft
+    targets ensure the model treats the labels as only \emph{partly}
+    reliable, giving corrupted information. The principle: \textbf{do not
+    allow the true training error (computed from training data) to go to
+    zero} --- do whatever you can to avoid that. This is a heuristic.
+  \end{exampleblock}
+\end{frame}
+
+%==================================================================
+\section{Early Stopping}
+%==================================================================
+
+\begin{frame}[shrink=10]{Early Stopping: The Algorithm}
+  \begin{block}{Procedure}
+    \begin{itemize}\setlength\itemsep{3pt}
+      \item Track the \textbf{validation error} as training proceeds.
+      \item Keep a \textbf{patience} parameter $p$.
+      \item Every $p$ steps, check whether validation error has improved
+            (got worse, increased, or remained the same).
+      \item If at step $k$ there was \emph{no improvement} in the previous
+            $p$ steps, \textbf{stop} training and return the model stored at
+            step $k-p$.
+    \end{itemize}
+    Training error keeps decreasing, but validation error follows a U-shape
+    --- we stop near its minimum.
+  \end{block}
+
+  \begin{exampleblock}{Example (patience $p=5$)}
+    \centering
+    \begin{tabular}{cc}
+      \toprule
+      \textbf{Epoch} & \textbf{Val.\ loss}\\
+      \midrule
+      $10$ & $0.25$\\
+      $11$ & $0.23$\\
+      $12$ & $0.24$\\
+      $13$ & $0.25$\\
+      $14$ & $0.25$\\
+      $15$ & $0.24$\\
+      $16$ & $0.24$\\
+      \bottomrule
+    \end{tabular}
+  \end{exampleblock}
+
+  \begin{block}{Properties}
+    Very effective and one of the most widely used forms of regularisation.
+    Can be combined with other regularisers (such as $L_2$). But \emph{how}
+    does it act as a regulariser, given gradient descent only sees training
+    data?
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Early Stopping: Why It Limits Weight Growth}
+  \begin{block}{Bounding the Update}
+    The SGD update $\mathbf{w}_{t+1} = \mathbf{w}_t - \eta\nabla\mathbf{w}_t$
+    unrolls to $\mathbf{w}_{t+1} = \mathbf{w}_0 - \eta\sum_{k=1}^{t}\nabla\mathbf{w}_k$.
+    If $\tau$ is the maximum value of $|\nabla\mathbf{w}|$, then
+    \[
+      |\mathbf{w}_{t+1}| \;\le\; |\mathbf{w}_0| + \eta\,t\,\tau .
+    \]
+    So $t$ \emph{controls how far} $\mathbf{w}_t$ can travel from
+    $\mathbf{w}_0$ --- limited steps means limited weight growth.
+  \end{block}
+
+  \begin{block}{Connecting to the Hessian}
+    Using the Taylor expansion $\nabla\mathcal L(\mathbf{w}) = H(\mathbf{w}-\mathbf{w}^{*})$
+    and starting from $\mathbf{w}_0 = 0$, the SGD update becomes
+    \[
+      \mathbf{w}_t = (I+\eta H)\mathbf{w}_{t-1} - \eta H\mathbf{w}^{*},
+    \]
+    and with $H = Q\Lambda Q^{\top}$ one can show
+    \[
+      \boxed{\;
+        \mathbf{w}_t
+          = Q\bigl(I - (I-\varepsilon\Lambda)^{t}\bigr)Q^{\top}\mathbf{w}^{*}
+      \;}
+      \quad(\text{rotation}\to\text{scaling}\to\text{rotation}).
+    \]
+  \end{block}
+
+  \begin{alertblock}{Comparison with $L_2$}
+    Recall the $L_2$ optimum
+    $\tilde{\mathbf{w}} = Q\bigl(I - (\Lambda+\alpha I)^{-1}\alpha\bigr)Q^{\top}\mathbf{w}^{*}$.
+    The two coincide (i.e.\ $\mathbf{w}_t = \tilde{\mathbf{w}}$) when
+    $\varepsilon$, $t$ and $\alpha$ are chosen so that
+    $(I-\varepsilon\Lambda)^{t} = (I+\alpha\Lambda^{-1})^{-1}$. So early
+    stopping is, in effect, $L_2$ regularisation in disguise.
+  \end{alertblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Early Stopping: Direction-Wise View}
+  \begin{block}{Important vs.\ Unimportant Directions}
+    \begin{itemize}\setlength\itemsep{4pt}
+      \item Early stopping only allows $t$ updates to the parameters.
+      \item If a parameter / direction $\mathbf{w}$ is \textbf{important}
+            for the loss $\mathcal L(\theta)$, then $\partial\mathcal L/\partial w$
+            is large, so its updates are large and it grows quickly.
+      \item If a parameter is \textbf{not important},
+            $\partial\mathcal L/\partial w$ is small, its updates are small,
+            and within only $t$ steps it cannot grow large.
+    \end{itemize}
+  \end{block}
+
+  \begin{exampleblock}{Conclusion}
+    By doing a \emph{limited} number of steps $t$, early stopping keeps
+    unimportant weights small (just like $L_2$ shrinks them via
+    $d_i/(d_i+\alpha)$), retaining only the significant directions. This is
+    why early stopping generalises.
+  \end{exampleblock}
+\end{frame}
+
+%==================================================================
+\section{Ensemble Methods (Bagging)}
+%==================================================================
+
+\begin{frame}[shrink=10]{Ensembles and Bagging}
+  \begin{block}{Idea}
+    Combine the outputs of different models to reduce generalisation error.
+    The models can respond to different classifiers, or be different
+    instances of the same classifier trained with: different
+    hyperparameters, different features, or different samples of training
+    data.
+  \end{block}
+
+  \begin{block}{Bagging}
+    Form an ensemble of different instances of the \emph{same} classifier.
+    From a given dataset, construct multiple training sets
+    $T_1, T_2, \ldots, T_k$ by \textbf{sampling with replacement} (each a
+    subset). Train one model on each.
+  \end{block}
+
+  \begin{exampleblock}{When Would Bagging Work?}
+    Each classifier makes certain errors on different points. We \emph{want
+    the errors to be as independent as possible} across models --- then
+    averaging cancels them out.
+  \end{exampleblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Bagging: The MSE of the Ensemble}
+  \begin{block}{Setup}
+    Consider $k$ models. Model $i$ makes error $\varepsilon_i$ on a test
+    example, where each $\varepsilon_i$ is drawn from a zero-mean
+    multivariate normal with
+    \[
+      \mathrm{Var} = \mathbb{E}[\varepsilon_i^2] = V,
+      \qquad
+      \mathrm{Cov} = \mathbb{E}[\varepsilon_i\varepsilon_j] = C \;(i\neq j).
+    \]
+    The average prediction error is $\frac1k\sum_i\varepsilon_i$.
+  \end{block}
+
+  \begin{block}{Expected Squared Error}
+    \begin{align*}
+      \text{mse}
+        &= \mathbb{E}\Bigl[\bigl(\tfrac1k\textstyle\sum_i\varepsilon_i\bigr)^2\Bigr]
+         = \frac{1}{k^2}\,\mathbb{E}\Bigl[\textstyle\sum_i\varepsilon_i^2
+             + \sum_{i}\sum_{j\neq i}\varepsilon_i\varepsilon_j\Bigr]\\
+        &= \frac{1}{k^2}\Bigl[\textstyle\sum_i\mathbb{E}[\varepsilon_i^2]
+             + \sum_i\sum_{j\neq i}\mathbb{E}[\varepsilon_i\varepsilon_j]\Bigr]
+         = \frac{1}{k^2}\bigl[kV + k(k-1)C\bigr]\\
+        &= \boxed{\;\frac{1}{k}V + \frac{k-1}{k}C\;}
+    \end{align*}
+    (using $k$ terms with variance $V$ and $k(k-1)$ cross terms with
+    covariance $C$).
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Bagging: When Does It Help?}
+  \begin{block}{Two Extremes}
+    \begin{itemize}\setlength\itemsep{5pt}
+      \item \textbf{Errors perfectly correlated} ($C = V$):
+            \[
+              \text{mse} = \frac{1}{k}V + \frac{k-1}{k}V = V.
+            \]
+            Bagging \textbf{does not help}: the ensemble MSE is as bad as a
+            single model.
+      \item \textbf{Errors independent / uncorrelated} ($C = 0$):
+            \[
+              \text{mse} = \frac{1}{k}V.
+            \]
+            The ensemble MSE \textbf{shrinks by a factor of $k$}.
+    \end{itemize}
+  \end{block}
+
+  \begin{alertblock}{Takeaway}
+    Bagging works precisely when the models' errors are independent (or
+    uncorrelated): $V \to V/k$. The more independent the errors, the
+    larger the gain. This is why we want diverse models (different samples,
+    features, hyperparameters).
+  \end{alertblock}
+\end{frame}
+
+%==================================================================
+\section{Dropout}
+%==================================================================
+
+\begin{frame}[shrink=10]{Dropout: Motivation}
+  \begin{block}{The Cost Problem with Ensembles}
+    Model averaging (a bagging ensemble) almost always helps, but training
+    several large neural networks for an ensemble is prohibitively
+    expensive --- whether we train networks with different architectures
+    (option 1) or multiple instances of the same network on different
+    samples (option 2). Combining several models at \emph{test} time is
+    also infeasible for real-time applications.
+  \end{block}
+
+  \begin{block}{What Dropout Does}
+    Dropout addresses both issues. It effectively allows training of
+    exponentially many neural networks without significant computational
+    overhead, and gives an efficient approximate way of \emph{combining}
+    them.
+  \end{block}
+
+  \begin{exampleblock}{Mechanism}
+    Dropout means \textbf{dropping out units}: temporarily remove a node
+    and its incoming/outgoing connections, producing a \emph{thinned}
+    network. Each node is retained with a fixed probability $p$ (typically
+    $p = 0.5$ for hidden nodes and $p = 0.8$ for visible/input nodes).
+  \end{exampleblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Dropout: Exponentially Many Thinned Networks}
+  \begin{block}{Counting the Networks}
+    With $n$ nodes, each can be retained or dropped, giving
+    \[
+      \boxed{\,2^{n}\,}
+    \]
+    possible thinned networks. This is prohibitively large --- we cannot
+    train them all separately.
+  \end{block}
+
+  \begin{block}{The Two Tricks}
+    \begin{enumerate}\setlength\itemsep{3pt}
+      \item \textbf{Share the weights} across all thinned networks (one
+            master weight matrix $W$).
+      \item \textbf{Sample a different thinned network for each training
+            instance} (or mini-batch).
+    \end{enumerate}
+  \end{block}
+
+  \begin{exampleblock}{Training Loop}
+    Initialise weights. For training instance / mini-batch $1$, apply
+    dropout to get a thinned network, compute the loss, back-propagate ---
+    updating \emph{only the active weights}. For instance $2$, apply dropout
+    again to get a \emph{different} thinned network, and repeat. Because of
+    weight sharing, the same master weights get updated through many
+    different thinned networks over time.
+  \end{exampleblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Dropout: Parameter Sharing Across Networks}
+  \begin{block}{Updates per Weight}
+    \begin{itemize}\setlength\itemsep{3pt}
+      \item If a weight was active in \emph{both} instances, by now it has
+            received \emph{two} updates.
+      \item If active in only \emph{one}, it has received \emph{one}
+            update.
+    \end{itemize}
+    Each thinned network is trained rarely (or even never) on its own, but
+    parameter sharing ensures \textbf{no weight is left untrained}: the
+    shared $W$ is updated many times across the various thinned networks
+    that contain it.
+  \end{block}
+
+  \begin{block}{What Happens at Test Time?}
+    We have $2^{n}$ thinned networks; at test time each would have been used
+    with probability $p$. It is impossible to aggregate the outputs of
+    $2^{n}$ networks. Instead, we use the \textbf{full network} and
+    \emph{scale} the output of each node by the fraction of time it was on
+    during training (i.e.\ by $p$). A node always present at test time but
+    on only a $p$-fraction of training time has its outgoing activation
+    multiplied by $p$.
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Dropout: Preventing Co-adaptation}
+  \begin{block}{Masking Noise on Hidden Units}
+    Dropout essentially applies a \textbf{masking noise} to the hidden
+    units. It prevents hidden units from \emph{co-adapting}: a hidden unit
+    cannot rely too much on other specific units, since any of them may be
+    dropped at any time.
+  \end{block}
+
+  \begin{block}{Robustness Through Redundancy}
+    Suppose hidden unit $h_i$ learns to detect a face by relying on another
+    unit that detects the nose. If that nose-detector is dropped, $h_i$
+    fails. Dropping a unit corresponds to \textbf{erasing the information}
+    it encodes. To cope, the model must learn another unit that
+    \emph{redundantly} encodes the nose, or learn to detect the face using
+    \emph{other} features.
+  \end{block}
+
+  \begin{alertblock}{Intuition}
+    Like discouraging lazy team members who depend on others: dropout
+    forces every hidden unit to be useful on its own, so each learns to be
+    more robust. ``$Koru\ ekule\ enkoru\ leru$'' --- no free-riding; each
+    unit must pull its weight.
+  \end{alertblock}
+\end{frame}
+
+%==================================================================
+\section{Recap: Training Deep Neural Networks}
+%==================================================================
+
+\begin{frame}[shrink=10]{Gradient Descent and the Chain Rule}
+  \begin{block}{Single Neuron}
+    For a one-neuron network $\hat y = \sigma(wx)$ with loss $\mathcal L$,
+    \[
+      w = w - \eta\,\nabla w,
+      \qquad
+      \nabla w = \frac{\partial \mathcal L(w)}{\partial w}
+        = \bigl(f(x)-y\bigr)\,f(x)\bigl(1-f(x)\bigr)\,x .
+    \]
+  \end{block}
+
+  \begin{block}{Wider Network}
+    With several inputs $x_1,x_2,x_3$ and weights $w_1,w_2,w_3$,
+    \[
+      w_j = w_j - \eta\,\frac{\partial \mathcal L}{\partial w_j},
+      \qquad
+      \nabla w_j = \bigl(f(x)-y\bigr)\,f(x)\bigl(1-f(x)\bigr)\,x_j .
+    \]
+  \end{block}
+
+  \begin{block}{Deeper Network (Back-Propagation)}
+    With $h_2 = \sigma(a_2)$, $a_2 = w_2 h_1$, $h_1 = \sigma(a_1)$,
+    $a_1 = w_1 x = w_1 h_0$, the chain rule gives
+    \[
+      \nabla w_1 = \frac{\partial \mathcal L(w)}{\partial w_1}
+        = \frac{\partial \mathcal L(w)}{\partial \hat y}\,
+          \frac{\partial \hat y}{\partial a_2}\,
+          \frac{\partial a_2}{\partial h_1}\,
+          \frac{\partial h_1}{\partial a_1}\,
+          \frac{\partial a_1}{\partial w_1}
+        = (\cdots)\,h_0 .
+    \]
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{The Two Key Observations}
+  \begin{block}{Gradient $\propto$ Input}
+    In general $\nabla w_i = \dfrac{\partial \mathcal L(w)}{\partial w_i}
+    = (\cdots)\,h_{i-1}$: the gradient w.r.t.\ a parameter is
+    \textbf{proportional to the input feeding into that parameter}
+    ($h_{i-1}$ or, for the first layer, $x_i$). It directly depends on the
+    activation of the preceding layer.
+  \end{block}
+
+  \begin{block}{Deep and Wide Networks}
+    For a deep, wide network, $\nabla w_2$ is given by the chain rule
+    applied across \textbf{multiple paths} --- this is exactly
+    back-propagation. The gradients tell us the \emph{responsibility} of
+    each parameter towards the loss, and they always have the same shape as
+    the variable being differentiated.
+  \end{block}
+
+  \begin{exampleblock}{Historical Note}
+    Back-propagation was popularised by Rumelhart \emph{et al.}\ in $1986$.
+    It did not catch on immediately due to limited \textbf{computational
+    power} and \textbf{memory}, and was not very successful for really deep
+    networks. In fact, until $2006$ it was very hard to train very deep
+    networks --- even after many epochs the training often did not converge.
+  \end{exampleblock}
+\end{frame}
+
+%==================================================================
+\section{DCT and JPEG Image Compression}
+%==================================================================
+
+\begin{frame}[shrink=10]{The Discrete Cosine Transform (DCT)}
+  \begin{block}{Objective}
+    Interpret the 2D DCT: represent an image as a \textbf{sum of basis
+    images}. Compression then amounts to setting some DCT coefficients to
+    zero --- this is the heart of \textbf{JPEG}.
+  \end{block}
+
+  \begin{block}{Forward 2D DCT}
+    \[
+      F(u,v)
+        = \frac{2}{N}\,C(u)C(v)
+          \sum_{x=0}^{N-1}\sum_{y=0}^{N-1}
+          f(x,y)\,
+          \cos\!\Bigl(\frac{(2x+1)u\pi}{2N}\Bigr)
+          \cos\!\Bigl(\frac{(2y+1)v\pi}{2N}\Bigr)
+    \]
+    with $C(k) = \tfrac{1}{\sqrt2}$ if $k=0$ and $C(k)=1$ otherwise.
+    Here $f(x,y)$ is the pixel value, $F(u,v)$ a DCT coefficient,
+    $N$ the image size, $(x,y)$ spatial coordinates, $(u,v)$ frequency
+    coordinates.
+  \end{block}
+
+  \begin{block}{Image as a Weighted Sum of Basis Images}
+    \[
+      X(m,n) = \sum_{k=0}^{N-1}\sum_{l=0}^{N-1}
+        b_{k,l}\,C_{k,l}[m,n],
+    \]
+    where the weights $b_{k,l}$ are the discrete cosine coefficients and
+    each basis image $C_{k,l}[m,n]$ is the product of a vertical frequency
+    $\tfrac{k}{2N}$ cosine and a horizontal frequency $\tfrac{l}{2N}$
+    cosine.
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Worked DCT Example ($2\times2$ Image)}
+  \begin{block}{Setup}
+    Let $f(x,y) = \begin{bmatrix} 1 & 2\\ 3 & 4 \end{bmatrix}$, $N=2$,
+    with $\cos(0)=1$, $\cos(\pi/4)=0.707$, $\cos(3\pi/4)=-0.707$.
+  \end{block}
+
+  \begin{block}{Compute $F(0,0)$ ($u=0,v=0$)}
+    \[
+      F(0,0) = \frac{2}{2}\,C(0)C(0)\sum_{x=0}^{1}\sum_{y=0}^{1} f(x,y)\cdot 1
+        = \frac{1}{\sqrt2}\cdot\frac{1}{\sqrt2}\,(1+2+3+4)
+        = \frac{1}{2}\cdot 10 = 5 .
+    \]
+    The DC coefficient $F(0,0)$ is proportional to the average pixel value.
+  \end{block}
+
+  \begin{block}{Other Coefficients}
+    Carrying out the analogous sums gives, for this image,
+    $F(0,1) \approx -1$, $F(1,0) \approx -2$, $F(1,1) = 0$, so the DCT
+    matrix is
+    \[
+      F = \begin{bmatrix} 5 & -1\\ -2 & 0 \end{bmatrix}.
+    \]
+    A horizontal edge in the image becomes energy concentrated in the first
+    column of the DCT matrix, because the image varies only in the vertical
+    direction and has no horizontal frequency content.
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Compression and the JPEG Pipeline}
+  \begin{block}{Compression by Dropping Coefficients}
+    Storing all coefficients reproduces the image exactly (no loss). Keeping
+    only the few \emph{significant} coefficients (e.g.\ $4$ out of many)
+    compresses with little visible loss, because most of the energy lives in
+    a handful of low-frequency coefficients.
+  \end{block}
+
+  \begin{block}{JPEG Encoding Steps}
+    \begin{enumerate}\setlength\itemsep{2pt}
+      \item Colour-space conversion: $\text{RGB} \to Y C_b C_r$
+            (luminance $Y$, blue chrominance $C_b$, red chrominance $C_r$).
+            Reversible, no data compression.
+      \item Chrominance down-sampling ($2\times2$ averaging of $C_b, C_r$):
+            removes a considerable amount of data the eye barely notices.
+      \item Break the $M\times N$ image into $8\times8$ blocks; take the 2D
+            DCT of each block.
+      \item \textbf{Quantisation}: divide each coefficient by a quantisation
+            table and round to the nearest integer (this is where data is
+            actually thrown away).
+      \item Run-length encoding (RLE) and Huffman encoding of the
+            quantised coefficients.
+    \end{enumerate}
+  \end{block}
+
+  \begin{exampleblock}{JPEG Decoding}
+    Read the bits for each $8\times8$ block, convert bits to DCT
+    coefficients, take the inverse DCT to recover the $8\times8$ image, and
+    put the blocks back together.
+  \end{exampleblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Why JPEG Works: Exploiting the Human Eye}
+  \begin{block}{Eyes Are Not Perfect}
+    The human eye has $\sim\!100$ million rod cells (brightness, low-light
+    sensitive) but only $\sim\!6$ million cone cells (colour sensitive).
+    So we perceive \textbf{brightness (luminance)} far better than
+    \textbf{colour (chrominance)}. JPEG removes information we do not
+    perceive well.
+  \end{block}
+
+  \begin{block}{DCT + Quantisation Together}
+    The DCT alone does not compress; quantisation does. The
+    \textbf{quantisation table} uses smaller divisors for low-frequency
+    (top-left) coefficients --- which the eye notices --- and larger
+    divisors for high-frequency (bottom-right) details the eye cannot
+    perceive easily. After rounding, the high-frequency details are thrown
+    away. We literally cannot tell the difference.
+  \end{block}
+
+  \begin{exampleblock}{High-Frequency Blindness}
+    Eyes are good at seeing edges (e.g.\ the outline of a rock) but poor at
+    high-frequency colour detail (single blades of grass, individual
+    leaves in a cluster, shadow variation). The chrominance quantisation
+    table uses higher numbers (coarser) than the luminance table. Then
+    \textbf{run-length} encoding compactly stores the many resulting zeros
+    (e.g.\ ``$0\times38$''), and \textbf{Huffman} coding compresses the
+    rest. H.264 (AVC, Advanced Video Coding) extends these ideas to video.
+  \end{exampleblock}
+\end{frame}
+
+%==================================================================
+\section{Summary}
+%==================================================================
+
+\begin{frame}[shrink=12]{Summary: The Big Picture}
+  \begin{columns}[T]
+    \column{0.49\textwidth}
+    \begin{block}{Autoencoders}
+      Encode $\mathbf{h}=g(W\mathbf{x}+\mathbf{b})$, decode
+      $\hat{\mathbf{x}}=f(W^{*}\mathbf{h}+\mathbf{c})$.\\
+      Undercomplete: compresses (like PCA).\\
+      Overcomplete: can learn identity $\Rightarrow$ needs regularisation.\\
+      Binary input: sigmoid $+$ cross-entropy.\\
+      Real input: linear $+$ squared error.
+    \end{block}
+
+    \begin{block}{PCA $\equiv$ Linear AE}
+      With linear encoder/decoder, squared loss, and
+      $\frac{1}{\sqrt m}$ centring: $H = X V_{\cdot,\le k}$, and the
+      encoder $W = V_{\cdot,\le k}$ equals the PCA projection $P$
+      (eigenvectors of $X^{\top}X$).
+    \end{block}
+
+    \column{0.49\textwidth}
+    \begin{block}{Generalisation Theory}
+      Expected error $=$ Bias$^2$ $+$ Variance $+$ noise.\\
+      true error $=$ train error $+$ const $+\ \Omega(\text{complexity})$,\\
+      $\Omega \approx \frac{\sigma^2}{n}\sum_i \partial\hat f(x_i)/\partial y_i$
+      (Stein's lemma). Minimise
+      $\mathcal L_{\text{train}}(\theta) + \Omega(\theta)$.
+    \end{block}
+
+    \begin{alertblock}{Regularisers}
+      $L_2$ scales weights by $\frac{d_i}{d_i+\alpha}$; denoising; sparse
+      (KL); contractive (Jacobian); weight tying; augmentation; input noise
+      $\equiv L_2$; label smoothing; early stopping $\equiv L_2$; bagging
+      ($V\!\to\!V/k$); dropout ($2^n$ shared networks).
+    \end{alertblock}
+  \end{columns}
+
+  \medskip
+  \begin{center}
+    \large\textit{%
+      ``An autoencoder learns a representation; regularisation stops it
+        from cheating. Every regulariser is really one principle ---
+        do not let the training error collapse to zero.''}
+  \end{center}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}
+  \Huge{\centerline{Thank You}}
+  \vspace{0.6cm}
+  \large{\centerline{Questions?}}
+\end{frame}
+
+\end{document}

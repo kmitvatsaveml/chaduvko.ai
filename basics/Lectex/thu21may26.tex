@@ -1,0 +1,569 @@
+%==================================================================
+%  WHY THESE OPTIMIZERS BECAME FAMOUS
+%  Beamer presentation — Madrid / whale theme
+%  Matches existing Optimization & Linear Algebra deck style
+%==================================================================
+
+\documentclass{beamer}
+\hypersetup{pdfpagemode=FullScreen}
+\setbeamertemplate{navigation symbols}{}
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{amsmath,amssymb}
+\usepackage[T1]{fontenc}
+\usepackage{times}
+\usepackage{mathptmx}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{mathtools}
+
+\mode<presentation>{
+  \usetheme{Madrid}
+  \usecolortheme{whale}
+}
+
+\setbeamertemplate{blocks}[rounded][shadow=false]
+\AtBeginEnvironment{block}{\small}
+\AtBeginEnvironment{alertblock}{\small}
+\AtBeginEnvironment{exampleblock}{\small}
+\setbeamersize{text margin left=6pt, text margin right=6pt}
+
+\setbeamercovered{transparent}
+\setbeamertemplate{bibliography item}[text]
+\setbeamertemplate{theorems}[numbered]
+\setbeamerfont{title}{size=\large}
+\setbeamerfont{date}{size=\tiny}
+\setbeamertemplate{itemize items}[ball]
+\setbeamertemplate{itemize subitem}[circle]
+\setbeamertemplate{itemize subsubitem}[triangle]
+\setbeamertemplate{caption}[numbered]
+
+%------------------------------------------------------------------
+%  TITLE PAGE
+%------------------------------------------------------------------
+\title[Why Optimizers Became Famous]{%
+  Why Did These Optimizers\\[4pt]
+  Become Famous?}
+
+\author[Vatsav Reddy]{%
+  \texorpdfstring{%
+    {\Large Vatsav Reddy}\\[6pt]
+    {\small Under the Guidance of}\\[2pt]
+    {\small Prof.\ Praveen Parchuri}%
+  }{Vatsav Reddy}}
+
+\institute[IIITH]{%
+  {\normalsize International Institute of Information Technology, Hyderabad}}
+
+\date{\today}
+
+%==================================================================
+\begin{document}
+%==================================================================
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}[shrink=10]{Contents}
+  \tableofcontents
+\end{frame}
+
+\AtBeginSection[]{
+  \begin{frame}<beamer>
+    \frametitle{Current Section}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
+%==================================================================
+\section{The Question \& The Deep Answer}
+%==================================================================
+
+\begin{frame}[shrink=10]{Prof.\ Praveen's Question}
+  \begin{alertblock}{The Question}
+    Out of possibly \textbf{infinitely many} optimizers one could
+    design mathematically, \textit{why did these specific few become
+    famous?}
+  \end{alertblock}
+
+  \bigskip
+
+  \begin{block}{The Surface Answer}
+    \begin{itemize}\setlength\itemsep{5pt}
+      \item \textbf{Not} because they have elegant equations
+      \item \textbf{Not} because the papers were mathematically beautiful
+      \item \textbf{Yes} because each solved a \emph{painful,
+            real-world engineering bottleneck} in deep learning
+    \end{itemize}
+  \end{block}
+
+  \bigskip
+
+  \begin{exampleblock}{The Deep Scientific Answer}
+    Almost all famous optimizers are approximating
+    \textbf{Newton's method} cheaply under hardware, memory,
+    and stochasticity constraints:
+    \[
+      w_{t+1} = w_t - H^{-1}\,\nabla\mathcal{L}(w_t)
+    \]
+    Storing $H$ costs $O(d^2)$; inverting costs $O(d^3)$~---
+    \textbf{impossible} for deep learning.\\[4pt]
+    The core question each optimizer answers is:\\
+    \textit{``How can we imitate $H^{-1}\nabla\mathcal{L}$
+    without ever computing $H$?''}
+  \end{exampleblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{The Hidden Evolution of Optimizers}
+  \begin{block}{Optimization Research as Failure-Mode Fixing}
+    \textit{``What specific failure of the previous optimizer
+    prevented neural networks from scaling?''}\\[6pt]
+    Every famous optimizer fixed \textbf{one dominant failure mode}.
+  \end{block}
+
+  \medskip
+
+  \begin{block}{The Evolutionary Chain}
+    \centering
+    \renewcommand{\arraystretch}{1.35}
+    \begin{tabular}{lll}
+      \toprule
+      \textbf{Optimizer} & \textbf{Failure It Fixed} & \textbf{Intelligence Added}\\
+      \midrule
+      GD        & No optimizer existed              & Move downhill\\
+      SGD       & Full-batch too expensive          & Compute at scale\\
+      Momentum  & Zig-zagging, flat regions         & Remember the past\\
+      NAG       & Blind overshooting                & Anticipate the future\\
+      AdaGrad   & Sparse features under-trained     & Adapt per feature\\
+      RMSProp   & Learning rate dies                & Forget old history\\
+      Adam      & Too much manual tuning            & Combine all of the above\\
+      AdamW     & Regularisation entangled in Adam  & Separate opt.\ from reg.\\
+      \bottomrule
+    \end{tabular}
+  \end{block}
+\end{frame}
+
+%==================================================================
+\section{Vanilla GD \& SGD: The Computation Bottleneck}
+%==================================================================
+
+\begin{frame}[shrink=10]{Vanilla GD --- Why It Became the Foundation}
+  \begin{block}{Update Rule \& Hessian Interpretation}
+    \[
+      w_{t+1} = w_t - \eta\,\nabla\mathcal{L}(w_t)
+              = w_t - \underbrace{\eta\,I}_{\approx\,H^{-1}}\,
+                \nabla\mathcal{L}(w_t)
+    \]
+    GD assumes $H^{-1} \approx \eta I$~---
+    \textbf{same curvature in every direction} (isotropic).
+  \end{block}
+
+  \medskip
+
+  \begin{alertblock}{Why It Fails on Real Loss Surfaces}
+    Neural network loss surfaces have highly \textbf{anisotropic}
+    curvature: $\lambda_{\max} \gg \lambda_{\min}$
+    (ill-conditioned Hessian).\\[4pt]
+    Result: severe zig-zagging in narrow ravines;
+    tiny gradients on gentle slopes $\Rightarrow$ very slow movement.
+  \end{alertblock}
+
+  \medskip
+
+  \begin{block}{Why SGD Became Famous}
+    \begin{itemize}\setlength\itemsep{5pt}
+      \item Datasets became huge: ImageNet, web-scale NLP,
+            recommendation systems
+      \item Full-batch GD: \textbf{one update per epoch}
+            (millions of calculations before any parameter move)
+      \item SGD: \textbf{$N$ updates per epoch}~--- enabled
+            online learning and memory-efficient training
+      \item Made training on millions of samples \textbf{feasible}
+            $\Rightarrow$ unlocked the deep learning boom
+    \end{itemize}
+  \end{block}
+
+  \begin{exampleblock}{Real-World Bottleneck Solved}
+    \textbf{Computational scalability}~--- not a mathematical
+    improvement, a \emph{hardware and data reality} fix.
+  \end{exampleblock}
+\end{frame}
+
+%==================================================================
+\section{Momentum \& NAG: Curvature-Aware Dynamics}
+%==================================================================
+
+\begin{frame}[shrink=10]{Momentum --- Temporal Curvature Sensing}
+  \begin{block}{Update Rule}
+    \[
+      u_t = \beta\,u_{t-1} + \eta\,\nabla w_t,
+      \qquad
+      w_{t+1} = w_t - u_t
+    \]
+    Expanding recursively:
+    $u_t = \eta\displaystyle\sum_{i=1}^{t}\beta^{t-i}\,\nabla w_i$~---
+    an \textbf{exponentially weighted moving average} of past gradients.
+  \end{block}
+
+  \medskip
+
+  \begin{block}{Scientific Interpretation}
+    \begin{itemize}\setlength\itemsep{5pt}
+      \item \textbf{Flat valley (low curvature):} gradients stay
+            \emph{aligned} for many steps
+            $\Rightarrow$ EMA \emph{amplifies}~---
+            optimizer accelerates
+      \item \textbf{Steep direction (high curvature):} gradients
+            \emph{flip sign} rapidly
+            $\Rightarrow$ EMA \emph{cancels oscillations}
+    \end{itemize}
+    Momentum \textbf{implicitly senses curvature anisotropy}
+    through temporal averaging~---
+    a cheap approximation to second-order dynamics.
+  \end{block}
+
+  \begin{alertblock}{Real-World Bottleneck Solved}
+    SGD zig-zagged in ravines;
+    neural network loss surfaces are \textbf{not} spherical bowls~---
+    they are ravines, curved valleys, anisotropic surfaces.
+    Momentum matched this geometry.
+    \textit{``Gain confidence, take bigger steps in same direction.''}
+  \end{alertblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Nesterov Accelerated Gradient --- Predictive Curvature Correction}
+  \begin{columns}[T]
+    \column{0.48\textwidth}
+    \begin{block}{Momentum: Standing Here}
+      \begin{enumerate}\setlength\itemsep{4pt}
+        \item Stand at $w_t$
+        \item Check slope \emph{here}
+        \item Move (may overshoot)
+      \end{enumerate}
+    \end{block}
+
+    \column{0.48\textwidth}
+    \begin{block}{NAG: Look Ahead First}
+      \begin{enumerate}\setlength\itemsep{4pt}
+        \item Peek at $w_t - \beta u_{t-1}$
+        \item Check \textbf{future} slope
+        \item Adjust \emph{before} moving
+      \end{enumerate}
+    \end{block}
+  \end{columns}
+
+  \medskip
+
+  \begin{block}{Scientific Interpretation: Hessian Appears Explicitly}
+    Taylor-expand the look-ahead gradient:
+    \[
+      \nabla\mathcal{L}(w_t - \beta u_{t-1})
+        \;\approx\;
+        \nabla\mathcal{L}(w_t) - \beta\,H\,u_{t-1}
+    \]
+    The term $\beta H u_{t-1}$ is a \textbf{curvature correction}.
+    NAG is thus a first-order approximation to
+    second-order predictive correction~---
+    this is the deep reason it outperforms plain Momentum.
+  \end{block}
+
+  \begin{exampleblock}{Real-World Bottleneck Solved}
+    Deeper networks became unstable; momentum's blind acceleration
+    caused many U-turns.
+    NAG's lookahead gave \textbf{smarter, more stable acceleration}~---
+    \textit{``Running fast while looking ahead.''}
+  \end{exampleblock}
+\end{frame}
+
+%==================================================================
+\section{AdaGrad \& RMSProp: Per-Feature Adaptivity}
+%==================================================================
+
+\begin{frame}[shrink=10]{AdaGrad --- Diagonal Hessian Approximation}
+  \begin{block}{Motivation: Sparse Features}
+    \[
+      \nabla w^1 = \bigl(f(x)-y\bigr)\cdot f(x)\cdot(1-f(x))\cdot x^1
+    \]
+    If $x^1$ is sparse (mostly 0): $\nabla w^1 \approx 0$ for most
+    inputs $\Rightarrow$ $w^1$ gets very few updates despite possibly
+    being \emph{critical} (e.g.\ rare words: ``earthquake'', ``fraud'').
+  \end{block}
+
+  \medskip
+
+  \begin{block}{AdaGrad Update \& Newton Connection}
+    \[
+      v_t = v_{t-1} + (\nabla w_t)^2,
+      \qquad
+      w_{t+1} = w_t
+        - \underbrace{\frac{\eta}{\sqrt{v_t+\varepsilon}}}_{\approx\,D_t}
+        \,\nabla w_t
+      \;\approx\; w_t - \eta\,H^{-1}\nabla w_t
+    \]
+    where $D_t = \operatorname{diag}((\sqrt{v_t}+\varepsilon)^{-1})$
+    is a \textbf{diagonal approximation to $H^{-1}$}.\\[4pt]
+    For quadratic loss $\mathcal{L}=\tfrac{1}{2}w^THw$,
+    large-curvature directions produce consistently large gradients,
+    so $v_t$ estimates curvature magnitude~---
+    \textbf{diagonal preconditioning from gradient statistics}.
+  \end{block}
+
+  \begin{alertblock}{Real-World Bottleneck Solved + Fatal Flaw}
+    Solved sparse feature under-training at Google-scale NLP and
+    ad-ranking.
+    Fatal flaw: $v_t\!\uparrow\infty$
+    $\Rightarrow$ effective $\eta\!\to 0$~---
+    AdaGrad gets stuck near convergence.
+  \end{alertblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{RMSProp --- Adaptive Local Curvature via EMA}
+  \begin{block}{Fix: Exponential Moving Average of Squared Gradients}
+    \[
+      v_t = \beta\,v_{t-1} + (1-\beta)(\nabla w_t)^2
+      \qquad (\beta > 0.9)
+    \]
+    \[
+      \boxed{w_{t+1} = w_t
+        - \frac{\eta}{\sqrt{v_t+\varepsilon}}\,\nabla w_t}
+    \]
+    Now $v_t \approx \mathbb{E}[g^2]$~--- the \textbf{local second
+    moment} of gradients, not the unbounded cumulative sum.
+  \end{block}
+
+  \medskip
+
+  \begin{block}{Fisher Information Connection}
+    For many probabilistic models:
+    \[
+      \mathbb{E}[g^2] \;\approx\; \mathcal{F}
+      \quad\text{(diagonal Fisher Information)}
+    \]
+    The Fisher Information is a \textbf{natural curvature measure} in
+    probability space.
+    RMSProp therefore approximates $H^{-1}$ through
+    \emph{local curvature statistics}~---
+    \textbf{does not kill the learning rate}.
+  \end{block}
+
+  \begin{exampleblock}{Real-World Bottleneck Solved}
+    Neural networks are \textbf{non-stationary}: gradients from 1000
+    steps ago should not dominate today.
+    EMA decay introduces \emph{forgetting and recency awareness},
+    matching real training dynamics.
+    Practical success $>$ theoretical elegance.
+  \end{exampleblock}
+\end{frame}
+
+%==================================================================
+\section{Adam \& AdamW: The Default Standard}
+%==================================================================
+
+\begin{frame}[shrink=10]{Adam --- Stochastic Diagonal Quasi-Newton Method}
+  \begin{block}{Adam $=$ RMSProp $+$ Momentum $+$ Bias Correction}
+    \begin{align*}
+      m_t &= \beta_1\,m_{t-1} + (1-\beta_1)\,\nabla w_t
+            &\leftarrow&\;\text{1st moment (direction)}\\
+      v_t &= \beta_2\,v_{t-1} + (1-\beta_2)\,(\nabla w_t)^2
+            &\leftarrow&\;\text{2nd moment (curvature)}\\[6pt]
+      \hat{m}_t &= \frac{m_t}{1-\beta_1^t},
+      \quad\hat{v}_t = \frac{v_t}{1-\beta_2^t}
+            &\leftarrow&\;\text{bias correction}\\[4pt]
+      \beta_1 &= 0.9,\quad\beta_2 = 0.999,\quad\varepsilon=10^{-8}
+    \end{align*}
+    \[
+      \boxed{w_{t+1} = w_t
+        - \frac{\eta}{\sqrt{\hat{v}_t}+\varepsilon}\cdot\hat{m}_t}
+      \;=\; w_t - \eta\,\underbrace{D_t^{-1}}_{\approx H^{-1}}\,\hat{m}_t
+    \]
+    \textbf{Adam is a stochastic, diagonal, quasi-Newton method}
+    with momentum.
+  \end{block}
+
+  \begin{alertblock}{Real-World Bottleneck Solved}
+    Before Adam: careful per-task LR tuning, optimizer instability.
+    After Adam: one set of defaults works across
+    CNNs, RNNs, Transformers, GANs, and diffusion models.
+    \textbf{Engineering practicality beats theoretical purity}~---
+    even though Adam does not converge in some cases, industry
+    adopted it universally because it \emph{reduces human suffering}.
+  \end{alertblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{AdamW --- Decoupled Geometry and Regularisation}
+  \begin{block}{The Hidden Problem in Adam + L2}
+    Standard Adam with L2 regularisation sets
+    $g_t \leftarrow \nabla\mathcal{L}(w_t) + \lambda w_t$.
+    Now $\lambda w_t$ enters the curvature accumulator $v_t$,
+    \textbf{entangling regularisation with adaptive scaling}~---
+    weights that are large get a smaller effective learning rate,
+    which is not true weight decay.
+  \end{block}
+
+  \medskip
+
+  \begin{block}{AdamW Fix: Apply Weight Decay After the Adaptive Step}
+    \[
+      w_{t+1}
+        = w_t
+        - \frac{\eta\,\hat{m}_t}{\sqrt{\hat{v}_t}+\varepsilon}
+        - \underbrace{\eta\lambda\,w_t}_{\text{true weight decay}}
+    \]
+    \begin{itemize}\setlength\itemsep{5pt}
+      \item \textbf{Optimisation geometry}: $\hat{m}_t/\sqrt{\hat{v}_t}$
+      \item \textbf{Regularisation geometry}: $\lambda w_t$
+            (independent of curvature scaling)
+    \end{itemize}
+    Cleaner decoupling $\Rightarrow$ better generalisation and
+    stability for over-parameterised models.
+  \end{block}
+
+  \begin{exampleblock}{Real-World Bottleneck Solved}
+    Transformers are hugely over-parameterised and
+    sensitive to regularisation.
+    AdamW became \textbf{the standard for LLMs and ViTs} because
+    decoupled weight decay improved generalisation at scale.
+  \end{exampleblock}
+\end{frame}
+
+%==================================================================
+\section{Grand Unification: Approximating Newton Cheaply}
+%==================================================================
+
+\begin{frame}[shrink=10]{Grand Unification: Every Optimizer Approximates $H^{-1}$}
+  \begin{block}{Newton's Ideal (Unachievable in Practice)}
+    \[
+      w_{t+1} = w_t - H^{-1}\nabla\mathcal{L}(w_t)
+      \qquad
+      \bigl[\text{cost: }O(d^2)\text{ storage},\;
+             O(d^3)\text{ inversion}\bigr]
+    \]
+  \end{block}
+
+  \medskip
+
+  \begin{block}{The $O(d)$ Approximation Hierarchy}
+    \centering
+    \renewcommand{\arraystretch}{1.35}
+    \begin{tabular}{lll}
+      \toprule
+      \textbf{Optimizer} & \textbf{$H^{-1}$ Approximation} & \textbf{Key Insight}\\
+      \midrule
+      GD       & $\eta I$                              & Isotropic; ignores curvature\\
+      Momentum & EMA filter on gradients               & Temporal curvature sensing\\
+      NAG      & $I - \beta H$ (1st-order)             & Curvature correction via lookahead\\
+      AdaGrad  & $\operatorname{diag}(\textstyle\sum g^2)^{-1/2}$
+                                                       & Cumulative diagonal preconditioning\\
+      RMSProp  & $\operatorname{diag}(\mathbb{E}[g^2])^{-1/2}$
+                                                       & Local curvature $\approx$ Fisher info\\
+      Adam     & EMA diagonal + smoothed gradient      & Quasi-Newton with momentum\\
+      AdamW    & Adam + decoupled $\lambda w$          & Separate geometry \& regularisation\\
+      \bottomrule
+    \end{tabular}
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Why Only These Survive: The Brutal Filter}
+  \begin{block}{Survival Criteria~--- All Must Be Satisfied}
+    \begin{itemize}\setlength\itemsep{6pt}
+      \item \textbf{$O(d)$ cost}: scales to billions of parameters
+            on GPU hardware
+      \item \textbf{Stochastic robustness}: stable under mini-batch
+            gradient noise, no full-batch requirement
+      \item \textbf{Minimal tuning}: default hyperparameters
+            transfer across tasks without per-problem search
+      \item \textbf{GPU parallelism}: element-wise operations;
+            no sequential or high-memory-bandwidth steps
+      \item \textbf{Predictable behaviour}: converges (or diverges
+            predictably) on standard architectures
+      \item \textbf{Reduces human effort}: lowers the number of
+            manual engineering decisions during training
+    \end{itemize}
+  \end{block}
+
+  \begin{alertblock}{The Core Insight}
+    There are \emph{infinitely many} mathematically valid optimizers.
+    Most fail at least one criterion above.
+    The few that satisfy \textbf{all criteria simultaneously}
+    are the names you know.\\[4pt]
+    \textbf{The history of optimizers is the history of cheap
+    approximations to $H^{-1}$ under real-world constraints.}
+  \end{alertblock}
+\end{frame}
+
+%==================================================================
+\section{Summary}
+%==================================================================
+
+\begin{frame}[shrink=10]{Summary}
+  \begin{columns}[T]
+    \column{0.50\textwidth}
+    \begin{block}{Engineering View}
+      \begin{itemize}\setlength\itemsep{4pt}
+        \item \textbf{GD / SGD}: feasibility at data scale;
+              $N$ updates per epoch vs.\ $1$
+        \item \textbf{Momentum}: smooth traversal of anisotropic
+              loss surfaces; EMA velocity
+        \item \textbf{NAG}: lookahead curvature correction;
+              reduces U-turns in deep nets
+        \item \textbf{AdaGrad}: per-feature adaptive $\eta$;
+              sparse feature parity
+        \item \textbf{RMSProp}: non-stationary training dynamics;
+              EMA prevents $\eta\!\to 0$
+        \item \textbf{Adam}: plug-and-play default; combines
+              momentum + adaptivity + bias correction
+        \item \textbf{AdamW}: Transformer regularisation;
+              decoupled weight decay
+      \end{itemize}
+    \end{block}
+
+    \column{0.46\textwidth}
+    \begin{block}{Scientific View ($H^{-1}$ Approx.)}
+      \begin{itemize}\setlength\itemsep{4pt}
+        \item \textbf{GD}: $H^{-1}\approx\eta I$
+        \item \textbf{Momentum}: temporal curvature
+              sensing via gradient EMA
+        \item \textbf{NAG}: $\nabla\mathcal{L}(w-\beta u)$
+              $\Rightarrow Hu$ term appears
+        \item \textbf{AdaGrad}: cumulative diagonal
+              $H^{-1}$ estimator
+        \item \textbf{RMSProp}: EMA diagonal
+              $\approx$ Fisher information
+        \item \textbf{Adam}: stochastic diagonal
+              quasi-Newton
+        \item \textbf{AdamW}: Adam with decoupled
+              curvature \& regularisation
+      \end{itemize}
+    \end{block}
+  \end{columns}
+
+  \medskip
+
+  \begin{exampleblock}{One-Line Answer for Prof.\ Praveen}
+    These optimizers became famous \textbf{not} because they were
+    mathematically possible, but because each solved a
+    \textbf{dominant real-world bottleneck}~--- computation,
+    instability, sparse features, convergence speed, adaptivity,
+    or generalisation~--- while remaining $O(d)$ and robust enough
+    to use as a \textbf{default}.
+  \end{exampleblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}
+  \Huge{\centerline{Thank You}}
+  \vspace{0.6cm}
+  \large{\centerline{Questions?}}
+\end{frame}
+
+%==================================================================
+\end{document}
+%==================================================================

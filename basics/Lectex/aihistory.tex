@@ -1,0 +1,771 @@
+
+
+\documentclass{beamer}
+
+\hypersetup{pdfpagemode=FullScreen}
+\setbeamertemplate{navigation symbols}{}
+
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{mathptmx}
+
+\mode<presentation>{
+\usetheme{Madrid}
+\usecolortheme{whale}
+}
+
+\setbeamercovered{transparent}
+\setbeamerfont{title}{size=\large}
+\setbeamerfont{date}{size=\tiny}
+\setbeamertemplate{itemize items}[ball]
+\setbeamertemplate{itemize subitem}[circle]
+\setbeamertemplate{itemize subsubitem}[triangle]
+\setbeamertemplate{caption}[numbered]
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TITLE PAGE
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\title[History of AI \& Deep Learning]
+{History of Artificial Intelligence \& Deep Learning}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+\begin{frame}{Contents}
+\tableofcontents
+\end{frame}
+\author[Vatsav Reddy]
+{
+{\Large Vatsav Reddy}\\
+\vspace{0.2cm}
+{\small Under the Guidance of}\\
+{\small Prof.\ Praveen Parchuri}
+}
+
+\institute[IIITH]
+{
+{\normalsize International Institute of Information Technology, Hyderabad}
+}
+\AtBeginSection[]{
+\begin{frame}{Current Section}
+\tableofcontents[currentsection]
+\end{frame}
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Lecture 1-1: Biological Neurons}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Course Overview}
+
+\begin{block}{Topics Covered}
+\begin{itemize}
+\item Deep Generative Models
+\item Restricted Boltzmann Machines
+\item Variational Autoencoders (VAEs)
+\item Autoregressive Models
+\item Generative Adversarial Networks (GANs)
+\end{itemize}
+\end{block}
+
+\vspace{0.2cm}
+
+\begin{block}{Main Architectures}
+CNNs, RNNs, LSTMs, Attention Mechanisms
+\end{block}
+
+\vspace{0.2cm}
+
+\begin{exampleblock}{Reference}
+J.\ Schmidhuber, \textit{Deep Learning: An Overview}
+\end{exampleblock}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Reticular Theory vs.\ Neuron Doctrine}
+
+\begin{columns}
+
+\column{0.48\textwidth}
+
+\begin{block}{Reticular Theory (1871--1873)}
+\begin{itemize}
+\item Proposed by Joseph von Gerlach
+\item Nervous system viewed as a single continuous network
+\item Camillo Golgi developed staining techniques
+\item Golgi supported Reticular Theory
+\end{itemize}
+\end{block}
+
+\column{0.48\textwidth}
+
+\begin{alertblock}{Neuron Doctrine (1888--1891)}
+\begin{itemize}
+\item Proposed by Santiago Ramón y Cajal
+\item Nervous system made of discrete neurons
+\item Neurons communicate through synapses
+\item Term ``neuron'' coined by Waldeyer-Hartz
+\end{itemize}
+\end{alertblock}
+
+\end{columns}
+
+\vspace{0.2cm}
+
+\begin{exampleblock}{1906 Nobel Prize}
+Golgi and Cajal jointly received the Nobel Prize in Physiology/Medicine despite supporting opposing theories.
+\end{exampleblock}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{The Final Word}
+
+\begin{block}{Electron Microscopy (1950s)}
+Electron microscopy conclusively confirmed the Neuron Doctrine by showing that neurons are distinct individual cells connected through synapses.
+\end{block}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Lecture 1-2: From Spring to Winter of AI}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{McCulloch-Pitts Neuron (1943)}
+
+\begin{itemize}
+\item Proposed by Warren McCulloch and Walter Pitts
+\item Simplified mathematical model of a biological neuron
+\item Inputs: $x_1,x_2,\ldots,x_n$
+\item Output: binary value $y \in \{0,1\}$
+\end{itemize}
+
+\vspace{0.3cm}
+
+\begin{block}{Threshold Logic}
+
+\[
+y =
+f\left(
+\sum_{i=1}^{n} w_i x_i
+\right)
+=
+\begin{cases}
+1 & \text{if } \sum w_i x_i \ge \theta \\
+0 & \text{otherwise}
+\end{cases}
+\]
+
+\end{block}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{The Perceptron (1957--1958)}
+
+\begin{itemize}
+\item ``Artificial Intelligence'' term coined in 1956
+\item Frank Rosenblatt proposed the Perceptron
+\item Inputs connected using learnable weights
+\item Could learn simple decision boundaries
+\item Received enormous media attention
+\end{itemize}
+
+\vspace{0.2cm}
+
+\begin{exampleblock}{Historical Quote}
+``The perceptron may eventually be able to learn, make decisions, and translate languages.''
+\end{exampleblock}
+
+\vspace{0.2cm}
+
+\begin{block}{First Multilayer Perceptrons}
+Ivakhnenko et al.\ (1965--1968) proposed early multilayer neural networks.
+\end{block}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Perceptron Limitations and AI Winter}
+
+\begin{alertblock}{Minsky \& Papert (1968)}
+\begin{itemize}
+\item Perceptrons cannot solve XOR
+\item XOR is not linearly separable
+\item Funding for connectionist AI decreased
+\item Led to the first AI Winter
+\end{itemize}
+\end{alertblock}
+
+\vspace{0.2cm}
+
+\begin{block}{Backpropagation (1986)}
+\begin{itemize}
+\item Rediscovered several times during 1960s--1970s
+\item Paul Werbos used it for neural networks in 1982
+\item Popularized by Rumelhart, Hinton, and Williams (1986)
+\end{itemize}
+\end{block}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Lecture 1-3: The Deep Revival}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{From AI Winter to Deep Revival}
+
+\begin{itemize}
+\item 1847: Cauchy introduced Gradient Descent
+\item 1989: Universal Approximation Theorem
+\item 1989--2006: Second AI Winter
+\end{itemize}
+
+\vspace{0.2cm}
+
+\begin{block}{Universal Approximation Theorem}
+A feedforward neural network with a single hidden layer can approximate any continuous function to arbitrary precision.
+\end{block}
+
+\vspace{0.2cm}
+
+\begin{exampleblock}{Deep Revival (2006)}
+Hinton and Salakhutdinov introduced effective pretraining methods for deep autoencoders.
+\end{exampleblock}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Unsupervised Pretraining and GPU Era}
+
+\begin{itemize}
+
+\item 1991--1993: Schmidhuber explored unsupervised pretraining
+
+\item 2007--2009: Greedy layer-wise pretraining became popular
+
+\item 2009: Graves et al.\ achieved Arabic handwriting recognition
+
+\item 2010: Dahl et al.\ reduced speech recognition error:
+\[
+23.2\% \rightarrow 16.0\%
+\]
+
+\item GPUs dramatically accelerated backpropagation
+
+\item 2011: Traffic sign recognition achieved 0.56\% error rate
+
+\end{itemize}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{ImageNet Challenge}
+
+\begin{center}
+
+\begin{tabular}{lcc}
+\toprule
+\textbf{Network} & \textbf{Top-5 Error} & \textbf{Layers} \\
+\midrule
+AlexNet & 16.4\% & 8 \\
+ZFNet & 11.2\% & 8 \\
+VGGNet & 7.3\% & 19 \\
+GoogLeNet & 6.7\% & 22 \\
+ResNet (2015) & 3.6\% & 152 \\
+\bottomrule
+\end{tabular}
+
+\end{center}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Lecture 1-4: From Cats to CNNs}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Hubel and Wiesel Experiment (1959)}
+
+\begin{block}{Key Discovery}
+Each neuron responds only to stimuli in a specific receptive field of visual space.
+\end{block}
+
+\vspace{0.2cm}
+
+\begin{itemize}
+\item ``Neurons that fire together wire together''
+\item Inspired hierarchical visual processing models
+\end{itemize}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Neocognitron and CNNs}
+
+\begin{block}{Neocognitron (1980)}
+Kunihiko Fukushima proposed the Neocognitron for handwritten character recognition.
+\end{block}
+
+\vspace{0.2cm}
+
+\begin{itemize}
+\item Late 1980s--1990s: CNNs popularized by Yann LeCun
+\item LeNet-5 (1998) achieved success on MNIST
+\item CNNs later enabled large-scale image recognition
+\end{itemize}
+
+\vspace{0.2cm}
+
+\begin{exampleblock}{Max Pooling}
+\[
+J(x,y)=\max_{m,n} I(x+m,y+n)
+\]
+\end{exampleblock}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Lecture 1-5: Faster, Higher, Stronger}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Better Optimization Techniques}
+
+\begin{block}{Optimization Advances (2012--2016)}
+\begin{itemize}
+\item Faster convergence
+\item Better generalization
+\item More stable training
+\item Nesterov Momentum improved SGD
+\end{itemize}
+\end{block}
+
+\vspace{0.2cm}
+
+\begin{center}
+
+\begin{tabular}{ll}
+\toprule
+\textbf{Year} & \textbf{Optimizer} \\
+\midrule
+2001 & AdaGrad \\
+2012 & RMSProp \\
+2014 & Adam \\
+2015 & Eve \\
+2018 & Beyond Adam \\
+\bottomrule
+\end{tabular}
+
+\end{center}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Lecture 1-6: The Curious Case of Sequences}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Why Sequences Matter}
+
+\begin{block}{Sequences Are Everywhere}
+\begin{itemize}
+\item Time series
+\item Speech
+\item Music
+\item Text
+\item Video
+\end{itemize}
+\end{block}
+
+\vspace{0.2cm}
+
+\begin{exampleblock}{Hopfield Networks (1982)}
+Associative memory systems capable of recalling patterns from noisy inputs.
+\end{exampleblock}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Jordan and Elman Networks}
+
+\begin{columns}
+
+\column{0.48\textwidth}
+
+\begin{block}{Jordan Network (1986)}
+Output state is fed back into future time steps.
+\end{block}
+
+\column{0.48\textwidth}
+
+\begin{block}{Elman Network (1990)}
+Hidden state is propagated across time steps.
+\end{block}
+
+\end{columns}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{RNN Problems and LSTMs}
+
+\begin{alertblock}{Exploding and Vanishing Gradients}
+Hochreiter and Bengio demonstrated the difficulty of training RNNs over long sequences.
+\end{alertblock}
+
+\vspace{0.2cm}
+
+\begin{block}{Long Short-Term Memory (LSTM) (1997)}
+LSTMs solved long-term dependency problems using gated memory cells.
+\end{block}
+
+\vspace{0.2cm}
+
+\begin{exampleblock}{Sequence-to-Sequence Learning}
+\begin{itemize}
+\item Sutskever et al.\ (2014)
+\item Bahdanau et al.\ (2015) introduced Attention
+\end{itemize}
+\end{exampleblock}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Attention and Reinforcement Learning}
+
+\begin{block}{Schmidhuber \& Huber (1991)}
+Used reinforcement learning to determine where a model should focus attention.
+\end{block}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Lecture 1-7: Beating Humans at Their Own Games}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{AI Beats Humans at Games}
+
+\begin{itemize}
+
+\item 2015: Deep Q-Networks (DQN) mastered Atari games
+
+\item 2016: AlphaGo defeated world champion Lee Sedol
+
+\item 2016: DeepStack defeated professional poker players
+
+\item 2017: OpenAI Five played Defense of the Ancients 2 (Dota 2)
+
+\end{itemize}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Lecture 1-8: The Modern Era}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Language Modeling and Translation}
+
+\begin{columns}
+
+\column{0.48\textwidth}
+
+\begin{block}{Language Modeling}
+\begin{itemize}
+\item Mikolov et al.\ 2010
+\item Kiros et al.\ 2015
+\item Kim et al.\ 2015
+\end{itemize}
+\end{block}
+
+\begin{block}{Machine Translation}
+\begin{itemize}
+\item Kalchbrenner et al.\ 2013
+\item Cho et al.\ 2014
+\item Bahdanau et al.\ 2015
+\item Luong et al.\ 2015
+\item Sutskever et al.\ 2014
+\end{itemize}
+\end{block}
+
+\column{0.48\textwidth}
+
+\begin{block}{Speech Recognition}
+\begin{itemize}
+\item Hinton et al.\ 2012
+\item Graves et al.\ 2013
+\item Chorowski et al.\ 2015
+\item Sak et al.\ 2015
+\end{itemize}
+\end{block}
+
+\end{columns}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Conversation and Question Answering}
+
+\begin{columns}
+
+\column{0.48\textwidth}
+
+\begin{block}{Conversation Modeling}
+\begin{itemize}
+\item Shang et al.\ 2015
+\item Vinyals et al.\ 2015
+\item Lowe et al.\ 2015
+\item Serban et al.\ 2016
+\item Bordes et al.\ 2017
+\end{itemize}
+\end{block}
+
+\column{0.48\textwidth}
+
+\begin{block}{Question Answering}
+\begin{itemize}
+\item Hermann et al.\ 2015
+\item Chen et al.\ 2016
+\item Xiong et al.\ 2016
+\item Dhingra et al.\ 2017
+\item Wang et al.\ 2017
+\end{itemize}
+\end{block}
+
+\end{columns}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Object Detection and Recognition}
+
+\begin{itemize}
+
+\item Semantic Segmentation (Long et al.\ 2015)
+
+\item Faster R-CNN (Ren et al.\ 2015)
+
+\item Inside-Outside Net (Bell et al.\ 2015)
+
+\item YOLO9000 (Redmon et al.\ 2016)
+
+\item R-FCN (Dai et al.\ 2016)
+
+\item Mask R-CNN (2017)
+
+\item Video Object Segmentation (Caelles et al.\ 2017)
+
+\end{itemize}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Visual Question Answering}
+
+\begin{itemize}
+\item Agrawal et al.\ 2015
+\item Yu et al.\ 2017
+\item Johnson et al.\ 2017
+\item Ben-Younes et al.\ 2017
+\item Malinowski et al.\ 2017
+\item Kazemi et al.\ 2017
+\end{itemize}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Video Question Answering}
+
+\begin{itemize}
+\item Tapaswi et al.\ 2016
+\item Zeng et al.\ 2016
+\item Zhao et al.\ 2017
+\item Jang et al.\ 2017
+\item Xu Hongyang et al.\ 2017
+\item Maharaj et al.\ 2017
+\end{itemize}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Image and Video Captioning}
+
+\begin{columns}
+
+\column{0.48\textwidth}
+
+\begin{block}{Image Captioning}
+\begin{itemize}
+\item Mao et al.\ 2014
+\item Kiros et al.\ 2015
+\item Donahue et al.\ 2015
+\item Vinyals et al.\ 2015
+\item Karpathy et al.\ 2015
+\end{itemize}
+\end{block}
+
+\column{0.48\textwidth}
+
+\begin{block}{Video Captioning}
+\begin{itemize}
+\item Donahue et al.\ 2014
+\item Venugopalan et al.\ 2014
+\item Pan et al.\ 2015
+\item Yao et al.\ 2015
+\item Rohrbach et al.\ 2015
+\end{itemize}
+\end{block}
+
+\end{columns}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Generative Models}
+
+\begin{block}{Generating Realistic Photos}
+\begin{itemize}
+\item Variational Autoencoders --- Kingma et al.\ 2013
+\item GANs --- Goodfellow et al.\ 2014
+\item Plug and Play Generative Networks --- Nguyen et al.\ 2016
+\item Progressive Growing of GANs --- Karras et al.\ 2017
+\end{itemize}
+\end{block}
+
+\vspace{0.2cm}
+
+\begin{block}{Generating Audio}
+WaveNet --- van den Oord et al.\ 2016
+\end{block}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Transformers (2017)}
+
+\begin{block}{Attention Is All You Need}
+Vaswani et al.\ introduced the Transformer architecture based entirely on self-attention mechanisms.
+\end{block}
+
+\vspace{0.2cm}
+
+\begin{itemize}
+\item Removed recurrence
+\item Highly parallelizable
+\item Became foundation of modern LLMs
+\end{itemize}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Lecture 1-9: Need for Sanity}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Why Does Deep Learning Work So Well?}
+
+\begin{alertblock}{Open Problems}
+\begin{itemize}
+\item High capacity and overfitting
+\item Numerical instability
+\item Exploding and vanishing gradients
+\item Sharp minima
+\item Adversarial examples
+\end{itemize}
+\end{alertblock}
+
+\vspace{0.2cm}
+
+\begin{block}{Current Direction}
+\begin{itemize}
+\item Explainability
+\item Robustness
+\item Theoretical understanding
+\item Reliable AI systems
+\end{itemize}
+\end{block}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Summary}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Timeline Summary}
+
+\begin{itemize}
+
+\item 1871 -- Reticular Theory
+
+\item 1888 -- Neuron Doctrine
+
+\item 1943 -- McCulloch-Pitts Neuron
+
+\item 1957 -- Perceptron
+
+\item 1968 -- AI Winter
+
+\item 1980 -- Neocognitron
+
+\item 1986 -- Backpropagation
+
+\item 1989 -- Universal Approximation Theorem
+
+\item 1997 -- LSTM
+
+\item 2006 -- Deep Revival
+
+\item 2012 -- AlexNet and GPU Revolution
+
+\item 2014 -- Seq2Seq and GANs
+
+\item 2015 -- DQN and ResNet
+
+\item 2016 -- AlphaGo
+
+\item 2017 -- Transformers
+
+\end{itemize}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}
+\Huge{\centerline{Thank You}}
+\vspace{0.5cm}
+\Large{\centerline{Questions?}}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\end{document}

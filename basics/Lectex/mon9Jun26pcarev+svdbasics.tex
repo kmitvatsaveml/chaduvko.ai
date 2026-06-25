@@ -1,0 +1,1632 @@
+\documentclass{beamer}
+\hypersetup{pdfpagemode=FullScreen}
+\setbeamertemplate{navigation symbols}{}
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[T1]{fontenc}
+\usepackage{times}
+\usepackage{mathptmx}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{mathtools}
+\usepackage{algorithm,algorithmic}
+\usepackage{bm}
+
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+
+\mode<presentation>{
+  \usetheme{Madrid}
+  \usecolortheme{whale}
+}
+
+\setbeamertemplate{blocks}[rounded][shadow=false]
+\AtBeginEnvironment{block}{\small}
+\AtBeginEnvironment{alertblock}{\small}
+\AtBeginEnvironment{exampleblock}{\small}
+\setbeamersize{text margin left=6pt, text margin right=6pt}
+\setbeamercovered{transparent}
+\setbeamertemplate{bibliography item}[text]
+\setbeamertemplate{theorems}[numbered]
+\setbeamerfont{title}{size=\large}
+\setbeamerfont{date}{size=\tiny}
+\setbeamertemplate{itemize items}[ball]
+\setbeamertemplate{itemize subitem}[circle]
+\setbeamertemplate{itemize subsubitem}[triangle]
+\setbeamertemplate{caption}[numbered]
+
+%------------------------------------------------------------------
+%  TITLE PAGE
+%------------------------------------------------------------------
+\title[SVD \& PCA from Scratch]{%
+  Singular Value Decomposition\\[4pt]
+  and PCA from Scratch}
+
+\author[Vatsav Reddy]{%
+  \texorpdfstring{%
+    {\Large Vatsav Reddy}\\[6pt]
+    {\small Under the Guidance of}\\[2pt]
+    {\small Prof.\ Praveen Parchuri}%
+  }{Vatsav Reddy}}
+
+\institute[IIITH]{%
+  {\normalsize International Institute of Information Technology, Hyderabad}}
+
+\date{\today}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}[shrink=10]{Contents}
+  \tableofcontents
+\end{frame}
+
+\AtBeginSection[]{
+  \begin{frame}<beamer>
+    \frametitle{Current Section}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
+%==================================================================
+\section{Variance, Covariance, and the Covariance Matrix}
+%==================================================================
+
+\begin{frame}[shrink=10]{Variance: Measuring Spread of a Single Variable}
+  \begin{block}{Population Variance}
+    For a random variable $x$ with mean $\mu_x = \mathbb{E}[x]$, the
+    \textbf{variance} measures how far values typically deviate from the mean:
+    \[
+      \mathrm{Var}(x)
+        = \mathbb{E}\!\left[(x - \mu_x)^2\right]
+        = \mathbb{E}[x^2] - \left(\mathbb{E}[x]\right)^2
+    \]
+    The second equality follows by expanding $(x-\mu_x)^2$ and using
+    linearity of expectation:
+    $\mathbb{E}[(x-\mu_x)^2]
+    = \mathbb{E}[x^2] - 2\mu_x\mathbb{E}[x] + \mu_x^2
+    = \mathbb{E}[x^2] - \mu_x^2$.
+  \end{block}
+
+  \medskip
+
+  \begin{block}{Sample Variance (from data)}
+    Given $n$ observations $x_1, x_2, \ldots, x_n$ with sample mean
+    $\bar{x} = \frac{1}{n}\sum_{i=1}^n x_i$:
+    \[
+      s^2 = \frac{1}{n-1}\sum_{i=1}^{n}(x_i - \bar{x})^2
+    \]
+    The factor $n-1$ (Bessel's correction) makes $s^2$ an unbiased
+    estimator of the true population variance.
+    In machine learning we often use $\frac{1}{n}$ for convenience.
+  \end{block}
+
+  \begin{alertblock}{Intuition}
+    Large variance $\Rightarrow$ data is spread out; small variance
+    $\Rightarrow$ data is tightly clustered near the mean.
+    PCA will later exploit variance to identify \emph{informative} directions.
+  \end{alertblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Covariance: How Two Variables Move Together}
+  \begin{block}{Population Covariance}
+    For two random variables $x$ and $y$ with means $\mu_x, \mu_y$:
+    \[
+      \mathrm{Cov}(x,y)
+        = \mathbb{E}\!\left[(x-\mu_x)(y-\mu_y)\right]
+        = \mathbb{E}[xy] - \mathbb{E}[x]\,\mathbb{E}[y]
+    \]
+    This measures \emph{joint} variability.
+  \end{block}
+
+  \medskip
+
+  \begin{block}{Sample Covariance}
+    \[
+      \widehat{\mathrm{Cov}}(x,y)
+        = \frac{1}{n-1}\sum_{i=1}^{n}(x_i - \bar{x})(y_i - \bar{y})
+    \]
+    \begin{itemize}\setlength\itemsep{4pt}
+      \item \textbf{Positive} $\Rightarrow$ $x$ and $y$ tend to increase
+            \emph{together} (positive association)
+      \item \textbf{Negative} $\Rightarrow$ one increases while the other
+            decreases (opposite movement)
+      \item \textbf{Near zero} $\Rightarrow$ no linear relationship between
+            $x$ and $y$
+    \end{itemize}
+    Note: $\mathrm{Cov}(x,x) = \mathrm{Var}(x)$ --- covariance with
+    itself is variance.
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Correlation: Normalised Covariance}
+  \begin{block}{Pearson Correlation Coefficient}
+    Raw covariance depends on the \emph{units} of $x$ and $y$.
+    Normalise by the product of standard deviations to get a
+    unit-free measure:
+    \[
+      \rho_{xy}
+        = \frac{\mathrm{Cov}(x,y)}{\sigma_x\,\sigma_y},
+      \qquad
+      \sigma_x = \sqrt{\mathrm{Var}(x)},\quad
+      \sigma_y = \sqrt{\mathrm{Var}(y)}
+    \]
+    \[
+      -1 \;\leq\; \rho_{xy} \;\leq\; 1
+    \]
+    \textbf{Sample version:}
+    \[
+      r_{xy}
+        = \frac{\displaystyle\sum_{i=1}^n(x_i-\bar{x})(y_i-\bar{y})}
+               {\displaystyle\sqrt{\sum_{i=1}^n(x_i-\bar{x})^2}
+                \,\sqrt{\sum_{i=1}^n(y_i-\bar{y})^2}}
+    \]
+  \end{block}
+
+  \begin{exampleblock}{Interpretation}
+    $\rho = +1$: perfect positive linear relationship.
+    $\rho = 0$: no linear relationship.
+    $\rho = -1$: perfect negative linear relationship.
+    High $|\rho|$ implies one variable is approximately a linear
+    function of the other --- one is \emph{redundant}.
+    PCA eliminates this redundancy.
+  \end{exampleblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{The Covariance Matrix}
+  \begin{block}{Setup: Multivariate Data}
+    Let $\mathbf{x} = [x_1, x_2, \ldots, x_n]^\top \in \mathbb{R}^n$
+    be a random vector.
+    The \textbf{covariance matrix} $\Sigma \in \mathbb{R}^{n \times n}$ is:
+    \[
+      \Sigma = \mathbb{E}\!\left[
+        (\mathbf{x}-\boldsymbol{\mu})(\mathbf{x}-\boldsymbol{\mu})^\top
+      \right],
+      \qquad
+      \boldsymbol{\mu} = \mathbb{E}[\mathbf{x}]
+    \]
+    Entry $(i,j)$ of $\Sigma$ is $\Sigma_{ij} = \mathrm{Cov}(x_i, x_j)$.
+  \end{block}
+
+  \medskip
+
+  \begin{block}{Explicit $2\times2$ Example}
+    For $\mathbf{x} = [x, y]^\top$:
+    \[
+      \Sigma
+        = \begin{bmatrix}
+            \mathrm{Var}(x)   & \mathrm{Cov}(x,y)\\
+            \mathrm{Cov}(y,x) & \mathrm{Var}(y)
+          \end{bmatrix}
+    \]
+    The matrix is \textbf{symmetric} ($\Sigma_{ij} = \Sigma_{ji}$) because
+    $\mathrm{Cov}(x_i,x_j) = \mathrm{Cov}(x_j,x_i)$.
+  \end{block}
+
+  \medskip
+
+  \begin{block}{Correlation Matrix}
+    Normalise each entry by $\sigma_i\sigma_j$:
+    $R_{ij} = \dfrac{\mathrm{Cov}(x_i,x_j)}{\sigma_i\sigma_j}$,\quad
+    so $R_{ii} = 1$ (diagonal is all ones).
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Sample Covariance Matrix from Data}
+  \begin{block}{Data Matrix and Sample Covariance}
+    With $m$ data points in $\mathbb{R}^n$, arrange them as rows of
+    $X \in \mathbb{R}^{m \times n}$.
+    After centring (zero-mean columns):
+    $X_c = X - \mathbf{1}\boldsymbol{\mu}^\top$
+    where $\boldsymbol{\mu} = \frac{1}{m}\sum_{i=1}^m \mathbf{x}_i$.
+
+    \medskip
+
+    The \textbf{sample covariance matrix} is:
+    \[
+      \boxed{
+        \Sigma
+          = \frac{1}{m}\,X_c^\top X_c
+          \;\in\; \mathbb{R}^{n \times n}
+      }
+    \]
+    Entry $(j,k)$:
+    $\Sigma_{jk}
+       = \frac{1}{m}\sum_{i=1}^{m}(X_c)_{ij}(X_c)_{ik}$
+    $=$ sample covariance between feature $j$ and feature $k$.
+  \end{block}
+
+  \begin{exampleblock}{Two Key Properties}
+    \begin{enumerate}\setlength\itemsep{5pt}
+      \item \textbf{Symmetric}: $\Sigma^\top = \frac{1}{m}(X_c^\top X_c)^\top
+            = \frac{1}{m}X_c^\top X_c = \Sigma$.\quad
+            Follows from $(AB)^\top = B^\top A^\top$.
+      \item \textbf{Positive semi-definite (PSD)}:
+            For any $\mathbf{v} \in \mathbb{R}^n$,\;
+            $\mathbf{v}^\top \Sigma\, \mathbf{v}
+             = \frac{1}{m}\mathbf{v}^\top X_c^\top X_c\mathbf{v}
+             = \frac{1}{m}\|X_c\mathbf{v}\|^2 \geq 0$.
+            Hence all eigenvalues $\lambda_i \geq 0$.
+    \end{enumerate}
+  \end{exampleblock}
+\end{frame}
+
+%==================================================================
+\section{Eigenvalue Decomposition (EVD) and Spectral Theorem}
+%==================================================================
+
+\begin{frame}[shrink=10]{Eigenvectors and Eigenvalues: Recap}
+  \begin{block}{Definition}
+    For a square matrix $A \in \mathbb{R}^{n \times n}$, a nonzero
+    vector $\mathbf{v}$ is an \textbf{eigenvector} with
+    \textbf{eigenvalue} $\lambda$ if:
+    \[
+      A\mathbf{v} = \lambda\mathbf{v}
+    \]
+    $A$ stretches or flips $\mathbf{v}$ along its own direction ---
+    \emph{no rotation}, only scaling.
+    To find $\lambda$: rearrange as $(A - \lambda I)\mathbf{v} = \mathbf{0}$.
+    For a nonzero solution $\mathbf{v}$ to exist, the matrix
+    $(A-\lambda I)$ must be singular, i.e.\ $\det(A-\lambda I) = 0$.
+    This is the \emph{characteristic polynomial} of $A$.
+  \end{block}
+
+  \medskip
+
+  \begin{block}{Why Eigenvectors Matter: Matrix Multiplication Becomes Scalar}
+    If $\mathbf{x} = \sum_{i=1}^n \alpha_i \mathbf{v}_i$ (eigenvectors
+    as basis), then:
+    \[
+      A\mathbf{x}
+        = A\sum_{i=1}^n \alpha_i\mathbf{v}_i
+        = \sum_{i=1}^n \alpha_i A\mathbf{v}_i
+        = \sum_{i=1}^n \alpha_i \lambda_i \mathbf{v}_i
+    \]
+    The matrix multiplication reduces to \textbf{scalar multiplications}
+    $\alpha_i \mapsto \alpha_i\lambda_i$.
+    This is the fundamental computational advantage of the eigenbasis.
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Eigenvalue Decomposition (EVD)}
+  \begin{block}{Construction}
+    Suppose $A$ has $n$ linearly independent eigenvectors
+    $\mathbf{v}_1, \ldots, \mathbf{v}_n$ with eigenvalues
+    $\lambda_1, \ldots, \lambda_n$.
+    Stack eigenvectors as columns of $V \in \mathbb{R}^{n \times n}$:
+    \[
+      AV
+        = A[\mathbf{v}_1 \;\cdots\; \mathbf{v}_n]
+        = [\lambda_1\mathbf{v}_1 \;\cdots\; \lambda_n\mathbf{v}_n]
+        = V\Lambda
+    \]
+    where $\Lambda = \mathrm{diag}(\lambda_1,\ldots,\lambda_n)$.
+    If $V$ is invertible (eigenvectors linearly independent):
+    \[
+      \boxed{A = V\Lambda V^{-1}}
+      \qquad\Longleftrightarrow\qquad
+      \Lambda = V^{-1}AV
+    \]
+  \end{block}
+
+  \medskip
+
+  \begin{block}{Spectral Theorem for Symmetric Matrices}
+    If $A$ is \textbf{real symmetric} ($A = A^\top$), then:
+    \begin{enumerate}\setlength\itemsep{4pt}
+      \item All eigenvalues are \textbf{real}.
+      \item Eigenvectors corresponding to \emph{distinct} eigenvalues
+            are \textbf{orthogonal}.
+      \item $A$ has a complete orthonormal set of eigenvectors, so
+            $V$ can be chosen to satisfy $V^\top V = I$,
+            meaning $V^{-1} = V^\top$.
+    \end{enumerate}
+    Therefore, for a real symmetric $A$:
+    \[
+      \boxed{A = V\Lambda V^\top}
+    \]
+    This is the \textbf{Spectral Decomposition}.
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Applying EVD to the Covariance Matrix}
+  \begin{block}{Diagonalising $\Sigma = \frac{1}{m}X_c^\top X_c$}
+    Since $\Sigma$ is real symmetric and PSD, the Spectral Theorem gives:
+    \[
+      \Sigma\,\mathbf{p}_i = \lambda_i\,\mathbf{p}_i,
+      \quad
+      \lambda_1 \geq \lambda_2 \geq \cdots \geq \lambda_n \geq 0,
+      \quad
+      \mathbf{p}_i^\top\mathbf{p}_j = \delta_{ij}
+    \]
+    Collecting into matrices:
+    \[
+      \Sigma = P\Lambda P^\top,
+      \quad
+      P = [\mathbf{p}_1 \;\cdots\; \mathbf{p}_n],
+      \quad
+      \Lambda = \mathrm{diag}(\lambda_1,\ldots,\lambda_n)
+    \]
+    \textbf{Key insight:} $\mathbf{p}_i^\top \Sigma\, \mathbf{p}_i = \lambda_i$,
+    so the variance of the projected data along direction $\mathbf{p}_i$
+    equals $\lambda_i$. Large eigenvalue $=$ high variance direction.
+  \end{block}
+
+  \begin{alertblock}{Computational Note}
+    In practice, use \texttt{numpy.linalg.eigh} (not \texttt{eig}) for
+    symmetric matrices: it returns \emph{real} eigenvalues in ascending
+    order and is more numerically stable.
+    Reverse to get descending order (largest first).
+  \end{alertblock}
+\end{frame}
+
+%==================================================================
+\section{The Gram Matrix Trick: Avoiding $O(n^3)$ Cost}
+%==================================================================
+
+\begin{frame}[shrink=10]{The Computational Problem}
+  \begin{block}{Why Direct EVD of $\Sigma$ is Expensive}
+    For face images of size $100 \times 100$, we have $n = 10{,}000$
+    features (pixels).
+    The covariance matrix $\Sigma = \frac{1}{m}X_c^\top X_c$ is then
+    $n \times n = 10{,}000 \times 10{,}000$.
+    \begin{itemize}\setlength\itemsep{5pt}
+      \item \textbf{Memory:} $n^2 = 10^8$ floating point entries
+            $\approx 800\,\text{MB}$
+      \item \textbf{Eigendecomposition:} $O(n^3) = O(10^{12})$
+            operations --- impractical
+    \end{itemize}
+  \end{block}
+
+  \medskip
+
+  \begin{block}{The Gram Matrix Alternative}
+    Instead of diagonalising the $n \times n$ matrix $\Sigma$,
+    diagonalise the much smaller $m \times m$
+    \textbf{Gram matrix}:
+    \[
+      G = \frac{1}{m}\,X_c X_c^\top \;\in\; \mathbb{R}^{m \times m}
+    \]
+    With $m = 400$ images and $n = 10{,}000$ pixels, this gives an EVD
+    cost of $O(m^3) = O(400^3) = O(6.4 \times 10^7)$ operations instead
+    of $O(10^{12})$ --- a speedup of
+    $\left(\frac{n}{m}\right)^3 = 25^3 = 15{,}625\times$.
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Why $G$ and $\Sigma$ Share the Same Non-Zero Eigenvalues}
+  \begin{block}{Shared Spectrum Identity}
+    Let $G\mathbf{v}_i = \lambda_i\mathbf{v}_i$ for some nonzero
+    $\mathbf{v}_i \in \mathbb{R}^m$ and $\lambda_i \neq 0$.
+    We claim $\mathbf{p}_i := X_c^\top\mathbf{v}_i$ is an eigenvector
+    of $\Sigma$ with the \emph{same} eigenvalue $\lambda_i$.
+
+    \medskip
+
+    \textbf{Proof:} Expand $G\mathbf{v}_i = \lambda_i\mathbf{v}_i$:
+    \[
+      \frac{1}{m}\,X_c X_c^\top\mathbf{v}_i = \lambda_i\mathbf{v}_i
+    \]
+    Multiply both sides on the left by $X_c^\top$:
+    \[
+      X_c^\top\!\left(\frac{1}{m}\,X_c X_c^\top\mathbf{v}_i\right)
+        = X_c^\top(\lambda_i\mathbf{v}_i)
+    \]
+    \[
+      \underbrace{\frac{1}{m}\,X_c^\top X_c}_{\Sigma}
+        \underbrace{X_c^\top\mathbf{v}_i}_{\mathbf{p}_i}
+        = \lambda_i \underbrace{X_c^\top\mathbf{v}_i}_{\mathbf{p}_i}
+    \]
+    \[
+      \therefore\quad
+      \boxed{\Sigma\,\mathbf{p}_i = \lambda_i\,\mathbf{p}_i}
+    \]
+    $\mathbf{p}_i = X_c^\top\mathbf{v}_i$ is indeed an eigenvector of
+    $\Sigma$ with the \emph{same} eigenvalue $\lambda_i$.
+    \hfill $\square$
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Normalising the Pixel-Space Eigenvector}
+  \begin{block}{Deriving the Normalisation Factor $\sqrt{m\lambda_i}$}
+    We have $\mathbf{p}_i \propto X_c^\top\mathbf{v}_i$.
+    To make $\|\mathbf{p}_i\| = 1$, compute the norm:
+    \[
+      \|X_c^\top\mathbf{v}_i\|^2
+        = (X_c^\top\mathbf{v}_i)^\top(X_c^\top\mathbf{v}_i)
+        = \mathbf{v}_i^\top X_c X_c^\top \mathbf{v}_i
+    \]
+    Since $X_c X_c^\top = mG$ (by definition), and
+    $G\mathbf{v}_i = \lambda_i\mathbf{v}_i$:
+    \[
+      = \mathbf{v}_i^\top (mG)\mathbf{v}_i
+        = m\,\mathbf{v}_i^\top G\mathbf{v}_i
+        = m\,\mathbf{v}_i^\top (\lambda_i\mathbf{v}_i)
+        = m\lambda_i\,\underbrace{\|\mathbf{v}_i\|^2}_{=1}
+        = m\lambda_i
+    \]
+    Therefore $\|X_c^\top\mathbf{v}_i\| = \sqrt{m\lambda_i}$, and
+    the \textbf{normalised pixel-space eigenvector} (eigenface) is:
+    \[
+      \boxed{
+        \mathbf{p}_i
+          = \frac{X_c^\top\mathbf{v}_i}{\sqrt{m\lambda_i}}
+      },
+      \qquad
+      \|\mathbf{p}_i\| = 1
+    \]
+  \end{block}
+
+  \begin{exampleblock}{Interpretation}
+    $\mathbf{v}_i \in \mathbb{R}^m$: coefficients telling how to
+    linearly combine the $m$ training images.
+    $X_c^\top\mathbf{v}_i$: the resulting pixel pattern from that
+    combination.
+    After normalisation: unit-norm direction in pixel space.
+  \end{exampleblock}
+\end{frame}
+
+%==================================================================
+\section{The Full PCA Pipeline}
+%==================================================================
+
+\begin{frame}[shrink=10]{PCA: Step-by-Step Algorithm}
+  \begin{block}{Step 1 --- Centre the Data}
+    Compute the mean image:
+    $\boldsymbol{\mu} = \frac{1}{m}\sum_{i=1}^m \mathbf{x}_i
+                      \in \mathbb{R}^n$.
+    Centre:
+    $X_c = X - \mathbf{1}_m\boldsymbol{\mu}^\top$.
+    Now every column of $X_c$ has zero mean.
+    \emph{Why?} Covariance measures spread \emph{around the mean};
+    centring ensures $\Sigma = \frac{1}{m}X_c^\top X_c$ correctly
+    represents variances and covariances.
+  \end{block}
+
+  \begin{block}{Step 2 --- Eigendecompose (via Gram Matrix if $m \ll n$)}
+    Compute $G = \frac{1}{m}X_c X_c^\top$ and solve $G\mathbf{v}_i = \lambda_i\mathbf{v}_i$.
+    Recover pixel-space eigenvectors via
+    $\mathbf{p}_i = \frac{X_c^\top\mathbf{v}_i}{\sqrt{m\lambda_i}}$.
+    Order by $\lambda_1 \geq \lambda_2 \geq \cdots$.
+  \end{block}
+
+  \begin{block}{Step 3 --- Select Top-$k$ Principal Components}
+    Form $P_k = [\mathbf{p}_1,\ldots,\mathbf{p}_k]^\top \in \mathbb{R}^{k \times n}$
+    (each row is a principal direction).
+    These $k$ directions capture the most variance.
+  \end{block}
+
+  \begin{block}{Step 4 --- Project}
+    \[
+      Z = X_c P_k^\top \in \mathbb{R}^{m \times k}
+    \]
+    Each row $\mathbf{z}_i = X_{c,i}P_k^\top \in \mathbb{R}^k$ gives
+    the PCA coefficients (scores) for data point $i$.
+    The $j$-th score $z_{ij} = \mathbf{x}_{c,i}^\top \mathbf{p}_j$:
+    the projection of image $i$ onto eigenface $j$.
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Reconstruction and Reconstruction Error}
+  \begin{block}{Reconstruction Formula}
+    Recover the original (approximate) image from PCA codes:
+    \[
+      \hat{\mathbf{x}}_i
+        = \boldsymbol{\mu} + \mathbf{z}_i P_k
+        = \boldsymbol{\mu} + \mathbf{x}_{c,i} P_k^\top P_k
+    \]
+    In summation form (most interpretable):
+    \[
+      \boxed{
+        \hat{\mathbf{x}}_i
+          = \boldsymbol{\mu}
+            + \sum_{j=1}^{k}
+              \underbrace{\bigl(\mathbf{x}_{c,i}^\top\mathbf{p}_j\bigr)}_{z_{ij}}
+              \mathbf{p}_j
+      }
+    \]
+    \textbf{Reading this:}
+    Start from the mean face $\boldsymbol{\mu}$.
+    Compute how much of each eigenface $\mathbf{p}_j$ is present
+    (the scalar $z_{ij}$).
+    Add those weighted eigenfaces back.
+  \end{block}
+
+  \begin{block}{Why $P_k^\top P_k \neq I$}
+    $P_k \in \mathbb{R}^{k \times n}$ has orthonormal \emph{rows},
+    so $P_k P_k^\top = I_k$ (rows are unit, orthogonal).
+    But $P_k^\top P_k \in \mathbb{R}^{n \times n}$ is a rank-$k$
+    orthogonal projector onto the subspace spanned by
+    $\mathbf{p}_1,\ldots,\mathbf{p}_k$, satisfying
+    $(P_k^\top P_k)^2 = P_k^\top P_k$.
+    The reconstruction projects $\mathbf{x}_{c,i}$ onto this
+    $k$-dimensional subspace.
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Explained Variance Ratio}
+  \begin{block}{How Much Information Does Each Component Capture?}
+    The variance of the projected data along direction $\mathbf{p}_i$:
+    \[
+      \frac{1}{m}\|\hat{X}_i\|^2
+        = \frac{1}{m}(X_c\mathbf{p}_i)^\top(X_c\mathbf{p}_i)
+        = \frac{1}{m}\mathbf{p}_i^\top X_c^\top X_c\mathbf{p}_i
+        = \mathbf{p}_i^\top \Sigma\,\mathbf{p}_i
+        = \mathbf{p}_i^\top (\lambda_i\mathbf{p}_i)
+        = \lambda_i
+    \]
+    So the variance along the $i$-th principal component is exactly
+    $\lambda_i$ (the corresponding eigenvalue).
+
+    \medskip
+
+    The \textbf{Explained Variance Ratio} (EVR) for component $i$:
+    \[
+      \mathrm{EVR}_i
+        = \frac{\lambda_i}{\sum_{j=1}^n \lambda_j}
+    \]
+    This is the fraction of \emph{total variance} captured by
+    direction $\mathbf{p}_i$.
+    To choose $k$: find the smallest $k$ such that
+    $\sum_{i=1}^k \mathrm{EVR}_i$ exceeds a threshold (e.g.\ $0.95$).
+  \end{block}
+
+  \begin{alertblock}{Practical Advice (from lecture)}
+    Set aside 100 validation images.
+    Compute reconstruction error for $k = 100, 1000, 10{,}000$.
+    The right $k$ is application-dependent: medical/industrial images
+    need much lower reconstruction error than coarse face recognition.
+  \end{alertblock}
+\end{frame}
+
+%==================================================================
+\section{Singular Value Decomposition (SVD)}
+%==================================================================
+
+\begin{frame}[shrink=10]{The Problem with Rectangular Matrices}
+  \begin{block}{Eigenvectors Require Square Matrices}
+    The eigenvalue equation $A\mathbf{v} = \lambda\mathbf{v}$ requires
+    both sides to live in the \emph{same} space $\mathbb{R}^n$.
+    For a \textbf{rectangular} matrix $A \in \mathbb{R}^{m \times n}$
+    with $m \neq n$:
+    \[
+      A\underbrace{\mathbf{v}}_{\in\,\mathbb{R}^n}
+        = \underbrace{\mathbf{w}}_{\in\,\mathbb{R}^m}
+    \]
+    The output lives in a \emph{different} space than the input.
+    The equation $A\mathbf{v} = \lambda\mathbf{v}$ cannot hold because
+    $\lambda\mathbf{v} \in \mathbb{R}^n$ while $A\mathbf{v} \in \mathbb{R}^m$.
+    Hence rectangular matrices \textbf{cannot have eigenvectors}.
+  \end{block}
+
+  \begin{block}{Why This Is a Real Problem}
+    Data matrices $X \in \mathbb{R}^{m \times n}$ are almost always
+    rectangular.
+    We \emph{want} the computational advantage of eigenvectors
+    (converting matrix multiplication to scalar multiplication), but
+    we cannot directly apply EVD.
+    SVD is the resolution: it finds \emph{two} sets of orthonormal
+    vectors --- one for the input space $\mathbb{R}^n$ and one for the
+    output space $\mathbb{R}^m$ --- that \emph{together} make the
+    matrix operation scalar.
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{SVD: The Core Idea}
+  \begin{block}{Looking for Paired Bases in Two Different Spaces}
+    Suppose we can find:
+    \begin{itemize}\setlength\itemsep{4pt}
+      \item $\mathbf{v}_1,\ldots,\mathbf{v}_k \in \mathbb{R}^n$
+            (orthonormal, forming a basis for the \emph{row space} of $A$)
+      \item $\mathbf{u}_1,\ldots,\mathbf{u}_k \in \mathbb{R}^m$
+            (orthonormal, forming a basis for the \emph{column space} of $A$)
+    \end{itemize}
+    such that:
+    \[
+      A\mathbf{v}_i = \sigma_i\,\mathbf{u}_i,
+      \quad i = 1,\ldots,k
+    \]
+    where $\sigma_i > 0$ are scalars called \textbf{singular values}.
+
+    \medskip
+
+    If every $\mathbf{x} \in \mathbb{R}^n$ is written as
+    $\mathbf{x} = \sum_{i=1}^k \alpha_i\mathbf{v}_i$, then:
+    \[
+      A\mathbf{x}
+        = \sum_{i=1}^k \alpha_i A\mathbf{v}_i
+        = \sum_{i=1}^k \alpha_i\sigma_i\mathbf{u}_i
+    \]
+    Once again, \textbf{matrix multiplication reduces to scalar
+    multiplication} --- this is the exact same advantage as eigenvectors,
+    but now valid for rectangular matrices.
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{SVD: Matrix Form}
+  \begin{block}{Writing $A\mathbf{v}_i = \sigma_i\mathbf{u}_i$ as a Matrix Equation}
+    Stack all relations simultaneously.
+    Let $V = [\mathbf{v}_1\;\cdots\;\mathbf{v}_n] \in \mathbb{R}^{n\times n}$
+    (all right singular vectors, extended to a full basis of $\mathbb{R}^n$
+    via Gram--Schmidt for the null space directions).
+    Let $U = [\mathbf{u}_1\;\cdots\;\mathbf{u}_m] \in \mathbb{R}^{m\times m}$
+    (left singular vectors, similarly extended).
+    Let $\Sigma \in \mathbb{R}^{m\times n}$ be the matrix with
+    $\Sigma_{ii} = \sigma_i$ for $i=1,\ldots,k$ and zeros elsewhere.
+    Then:
+    \[
+      AV = U\Sigma
+      \quad\Rightarrow\quad
+      \boxed{A = U\Sigma V^\top}
+    \]
+    This is the \textbf{Singular Value Decomposition} of $A$.
+    Since $U$ and $V$ are orthogonal ($UU^\top = I$, $VV^\top = I$),
+    their inverses are their transposes.
+  \end{block}
+
+  \begin{block}{Dimensions}
+    $U \in \mathbb{R}^{m\times m}$ (left singular vectors),\;
+    $\Sigma \in \mathbb{R}^{m\times n}$ (diagonal, singular values),\;
+    $V \in \mathbb{R}^{n\times n}$ (right singular vectors).
+    The \emph{thin} (economy) SVD keeps only the $k = \mathrm{rank}(A)$
+    non-zero singular values:
+    $U_k \in \mathbb{R}^{m\times k}$,\;
+    $\Sigma_k \in \mathbb{R}^{k\times k}$,\;
+    $V_k \in \mathbb{R}^{n\times k}$.
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{How to Find $U$ and $V$: Connection to EVD}
+  \begin{block}{Computing $V$ (Right Singular Vectors)}
+    Suppose $A = U\Sigma V^\top$ exists.
+    Compute $A^\top A$:
+    \[
+      A^\top A
+        = (U\Sigma V^\top)^\top (U\Sigma V^\top)
+        = V\Sigma^\top U^\top U\Sigma V^\top
+        = V\underbrace{\Sigma^\top\Sigma}_{\text{diagonal: }\sigma_i^2}V^\top
+    \]
+    (using $U^\top U = I$ since $U$ is orthogonal).
+    This is exactly the \textbf{EVD of $A^\top A$}:
+    $A^\top A = V\Lambda_V V^\top$ where $\Lambda_V = \Sigma^\top\Sigma$
+    has entries $\lambda_i = \sigma_i^2$.
+    Therefore: \textbf{$V$ consists of the eigenvectors of $A^\top A$}.
+  \end{block}
+
+  \begin{block}{Computing $U$ (Left Singular Vectors)}
+    Similarly, compute $AA^\top$:
+    \[
+      AA^\top
+        = (U\Sigma V^\top)(U\Sigma V^\top)^\top
+        = U\Sigma V^\top V\Sigma^\top U^\top
+        = U\underbrace{\Sigma\Sigma^\top}_{\text{diagonal: }\sigma_i^2}U^\top
+    \]
+    This is the EVD of $AA^\top$:
+    $AA^\top = U\Lambda_U U^\top$.
+    Therefore: \textbf{$U$ consists of the eigenvectors of $AA^\top$}.
+    And the singular values $\sigma_i = \sqrt{\lambda_i}$
+    (square roots of the common eigenvalues of $A^\top A$ and $AA^\top$).
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Why SVD Always Exists}
+  \begin{block}{SVD vs.\ EVD: Existence Conditions}
+    EVD of $A$ requires:
+    \begin{enumerate}\setlength\itemsep{4pt}
+      \item $A$ is \textbf{square} ($n \times n$)
+      \item $A$ has $n$ linearly independent eigenvectors
+            (not always guaranteed)
+    \end{enumerate}
+    SVD has \textbf{no such restrictions}. It always exists because:
+    \begin{itemize}\setlength\itemsep{4pt}
+      \item $A^\top A$ is always a \textbf{real symmetric PSD} matrix
+            (regardless of the shape of $A$).
+            Symmetric matrices always have a complete set of real
+            orthogonal eigenvectors (Spectral Theorem).
+      \item Similarly $AA^\top$ is always real symmetric PSD.
+    \end{itemize}
+    Therefore, $V$ and $U$ always exist, and hence \textbf{every real
+    matrix $A \in \mathbb{R}^{m \times n}$ has an SVD}.
+  \end{block}
+
+  \begin{exampleblock}{Geometric Interpretation}
+    Any linear transformation $\mathbb{R}^n \to \mathbb{R}^m$ can be
+    decomposed into three steps:
+    (1) rotate/reflect in the input space (by $V^\top$);
+    (2) scale along axes (by $\Sigma$);
+    (3) rotate/reflect in the output space (by $U$).
+  \end{exampleblock}
+\end{frame}
+
+%==================================================================
+\section{Low-Rank Approximation and the Eckart--Young Theorem}
+%==================================================================
+
+\begin{frame}[shrink=10]{SVD as a Sum of Rank-1 Matrices}
+  \begin{block}{Outer Product Expansion}
+    From $A = U\Sigma V^\top = \sum_{i=1}^k \sigma_i\mathbf{u}_i\mathbf{v}_i^\top$:
+    \[
+      A
+        = \sigma_1\mathbf{u}_1\mathbf{v}_1^\top
+        + \sigma_2\mathbf{u}_2\mathbf{v}_2^\top
+        + \cdots
+        + \sigma_k\mathbf{u}_k\mathbf{v}_k^\top
+    \]
+    Each term $\sigma_i\mathbf{u}_i\mathbf{v}_i^\top$ is a
+    \textbf{rank-1 matrix} (outer product of two vectors).
+    They are added in order of decreasing importance (since
+    $\sigma_1 \geq \sigma_2 \geq \cdots \geq \sigma_k \geq 0$).
+    Including all $k$ terms recovers $A$ exactly.
+    \textbf{Dropping the last $k - r$ terms} gives a rank-$r$
+    approximation.
+  \end{block}
+
+  \begin{block}{Storage Comparison}
+    Original $A$: $m \times n$ entries.
+    Rank-$r$ approximation: need to store $r$ triples
+    $(\mathbf{u}_i, \sigma_i, \mathbf{v}_i)$:
+    $(m + n + 1) \times r$ values.
+    Compression ratio $\approx \dfrac{mn}{(m+n)r}$.
+    For $m=400$, $n=10{,}000$, $r=50$:
+    original $4 \times 10^6$, compressed $\approx 5 \times 10^5$
+    --- 8$\times$ reduction.
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{The Eckart--Young--Mirsky Theorem}
+  \begin{theorem}[Best Low-Rank Approximation]
+    Let $A \in \mathbb{R}^{m \times n}$ with SVD
+    $A = \sum_{i=1}^k \sigma_i\mathbf{u}_i\mathbf{v}_i^\top$.
+    The \textbf{best rank-$r$ approximation} of $A$ in the Frobenius
+    norm is:
+    \[
+      A_r = \sum_{i=1}^r \sigma_i\mathbf{u}_i\mathbf{v}_i^\top
+    \]
+    That is, $A_r$ solves:
+    \[
+      \min_{B\,:\,\mathrm{rank}(B) \leq r}
+        \|A - B\|_F^2
+    \]
+    and the minimum error is:
+    \[
+      \|A - A_r\|_F^2 = \sum_{i=r+1}^k \sigma_i^2
+    \]
+  \end{theorem}
+
+  \begin{block}{Why This Is Deep}
+    The theorem says: if you must approximate $A$ by a rank-$r$ matrix
+    and you want to minimise the total squared entry-wise error,
+    the answer is exactly the first $r$ terms of the SVD expansion.
+    \textbf{The singular values directly quantify reconstruction quality.}
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Frobenius Norm: What We Are Minimising}
+  \begin{block}{Definition}
+    The Frobenius norm of a matrix $A \in \mathbb{R}^{m \times n}$:
+    \[
+      \|A\|_F = \sqrt{\sum_{i=1}^m\sum_{j=1}^n a_{ij}^2}
+              = \sqrt{\mathrm{tr}(A^\top A)}
+    \]
+    It is the \emph{square root of the sum of squared entries} ---
+    the natural generalisation of the Euclidean norm to matrices.
+    $\|A - B\|_F^2 = \sum_{i,j}(a_{ij} - b_{ij})^2$ measures
+    entry-wise squared differences.
+  \end{block}
+
+  \begin{block}{Connection to Singular Values}
+    Since $\mathrm{tr}(A^\top A) = \mathrm{tr}(V\Sigma^2 V^\top)
+    = \mathrm{tr}(\Sigma^2) = \sum_i \sigma_i^2$:
+    \[
+      \|A\|_F^2 = \sum_{i=1}^k \sigma_i^2
+    \]
+    So the singular values fully determine the Frobenius norm.
+    Dropping the $r+1,\ldots,k$ terms loses
+    $\sum_{i=r+1}^k \sigma_i^2$ --- the ``energy'' in those directions.
+  \end{block}
+\end{frame}
+
+%==================================================================
+\section{SVD and PCA: The Complete Connection}
+%==================================================================
+
+\begin{frame}[shrink=10]{PCA via SVD of the Centred Data Matrix}
+  \begin{block}{Direct SVD of $X_c$}
+    Apply SVD to the centred data matrix $X_c \in \mathbb{R}^{m\times n}$:
+    \[
+      X_c = U\Sigma V^\top
+    \]
+    $V \in \mathbb{R}^{n \times n}$: right singular vectors.
+
+    Now compute $X_c^\top X_c$:
+    \[
+      X_c^\top X_c
+        = (U\Sigma V^\top)^\top(U\Sigma V^\top)
+        = V\Sigma^\top U^\top U\Sigma V^\top
+        = V\Sigma^2 V^\top
+    \]
+    Comparing with the EVD $\Sigma_{\mathrm{cov}} = P\Lambda P^\top$:
+    \begin{itemize}\setlength\itemsep{4pt}
+      \item \textbf{Principal directions} $P = V$ (right singular vectors of $X_c$)
+      \item \textbf{Eigenvalues} $\Lambda = \frac{1}{m}\Sigma^2$,\quad
+            i.e.\ $\lambda_i = \sigma_i^2/m$
+    \end{itemize}
+    Therefore, \textbf{PCA of $X_c$ is equivalent to the SVD of $X_c$}.
+    One can run PCA by directly SVD-decomposing the data matrix ---
+    often more numerically stable than computing $X_c^\top X_c$ first.
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Row Space, Column Space, Rank, and Null Space}
+  \begin{block}{Fundamental Subspaces of $A \in \mathbb{R}^{m \times n}$}
+    \begin{itemize}\setlength\itemsep{5pt}
+      \item \textbf{Column space} (range of $A$):
+            $\mathrm{col}(A) = \{A\mathbf{x} : \mathbf{x} \in \mathbb{R}^n\}
+            \subseteq \mathbb{R}^m$.
+            Dimension $= \mathrm{rank}(A)$.
+      \item \textbf{Row space}: $\mathrm{col}(A^\top) \subseteq \mathbb{R}^n$.
+            Dimension $= \mathrm{rank}(A)$.
+      \item \textbf{Null space}: $\mathrm{null}(A) = \{\mathbf{x} : A\mathbf{x} = \mathbf{0}\}
+            \subseteq \mathbb{R}^n$.
+            Dimension $= n - \mathrm{rank}(A)$ (Rank--Nullity Theorem).
+      \item \textbf{Left null space}: $\mathrm{null}(A^\top) \subseteq \mathbb{R}^m$.
+    \end{itemize}
+  \end{block}
+
+  \begin{block}{SVD Reveals the Subspaces}
+    The right singular vectors $\mathbf{v}_1,\ldots,\mathbf{v}_k$ span the
+    \textbf{row space} of $A$.
+    The remaining $\mathbf{v}_{k+1},\ldots,\mathbf{v}_n$ span the
+    \textbf{null space}.
+    The left singular vectors $\mathbf{u}_1,\ldots,\mathbf{u}_k$ span the
+    \textbf{column space}.
+    The remaining $\mathbf{u}_{k+1},\ldots,\mathbf{u}_m$ span the
+    \textbf{left null space}.
+
+    \medskip
+
+    \textbf{Consequence}: only the $k$ dimensional subspace of $\mathbb{R}^n$
+    in the row space can generate a non-zero output; null-space vectors
+    are annihilated.
+    So we only need $k = \mathrm{rank}(A)$ basis vectors to fully
+    represent what $A$ does.
+  \end{block}
+\end{frame}
+
+%==================================================================
+\section{Eigenfaces: PCA Applied to Face Recognition}
+%==================================================================
+
+\begin{frame}[shrink=10]{Eigenfaces: Setup}
+  \begin{block}{The Data}
+    $m$ training face images, each of size $100 \times 100$ pixels
+    $\Rightarrow$ $n = 10{,}000$ features per image.
+    Data matrix $X \in \mathbb{R}^{m \times 10{,}000}$.
+    After centring: $X_c$ with zero-mean columns.
+  \end{block}
+
+  \begin{block}{Computing Eigenfaces via the Gram Matrix Trick}
+    Direct EVD of $\Sigma$ is infeasible ($10{,}000 \times 10{,}000$).
+    Instead:
+    \begin{enumerate}\setlength\itemsep{5pt}
+      \item Compute $G = \frac{1}{m}X_c X_c^\top \in \mathbb{R}^{m\times m}$
+      \item Solve $G\mathbf{v}_i = \lambda_i\mathbf{v}_i$ (cheap: $m \times m$)
+      \item Recover eigenfaces:
+            $\mathbf{p}_i = \frac{X_c^\top\mathbf{v}_i}{\sqrt{m\lambda_i}}$
+            $\in \mathbb{R}^{10{,}000}$
+      \item Reshape each $\mathbf{p}_i$ to $100 \times 100$ for
+            visualisation --- these are the \textbf{eigenfaces}
+      \item Keep top-$k$ eigenfaces (e.g.\ $k = 50$--$100$)
+    \end{enumerate}
+  \end{block}
+
+  \begin{block}{Properties of Eigenfaces}
+    \begin{itemize}\setlength\itemsep{4pt}
+      \item They form an orthonormal basis for the space of faces in
+            the dataset
+      \item Any face $\approx \boldsymbol{\mu} + \sum_{i=1}^k z_i\mathbf{p}_i$
+      \item Store $\mathbf{p}_1,\ldots,\mathbf{p}_k$ once;
+            then only $k$ scalars $z_i$ per new image
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Eigenfaces: Compression and Recognition}
+  \begin{block}{Storage Analysis}
+    Original dataset: $m \times n = m \times 10{,}000$ numbers.
+    After PCA with $k$ components:
+    \[
+      \underbrace{k \times n}_{\text{eigenfaces }P_k}
+      + \underbrace{n}_{\text{mean face }\boldsymbol{\mu}}
+      + \underbrace{m \times k}_{\text{scores }Z}
+      \;\text{ numbers total}
+    \]
+    Numerical example: $m = 400$, $n = 10{,}000$, $k = 50$:
+    \begin{itemize}\setlength\itemsep{3pt}
+      \item Original: $400 \times 10{,}000 = 4{,}000{,}000$ values
+      \item Compressed: $50 \times 10{,}000 + 10{,}000 + 400 \times 50
+            = 510{,}000$ values
+      \item Compression factor: $\approx 7.8\times$
+    \end{itemize}
+  \end{block}
+
+  \begin{block}{Generalisation and Limitations}
+    The eigenfaces basis is learned from training data.
+    Any new face can be projected onto this basis and (approximately)
+    reconstructed.
+    If training data is diverse (many demographics, lighting conditions),
+    the basis generalises well.
+    If training data is narrow (only one demographic), the basis will
+    reconstruct out-of-distribution faces poorly.
+    Same principle as any machine learning model: quality of the learned
+    representation depends on diversity of training data.
+  \end{block}
+\end{frame}
+
+%==================================================================
+\section{Summary: SVD, PCA, and Their Connections}
+%==================================================================
+
+\begin{frame}[shrink=10]{Summary: The Big Picture}
+  \begin{columns}[T]
+    \column{0.48\textwidth}
+    \begin{block}{EVD (Square Matrices Only)}
+      $A = V\Lambda V^{-1}$\\
+      Symmetric: $A = V\Lambda V^\top$\\
+      \textbf{Requires:} square; sufficient independent eigenvectors\\
+      \textbf{Gives:} eigenvalues $\lambda_i$, eigenvectors $\mathbf{v}_i$\\
+      $A\mathbf{v}_i = \lambda_i\mathbf{v}_i$
+    \end{block}
+
+    \begin{block}{SVD (Any Matrix)}
+      $A = U\Sigma V^\top$\\
+      $U$: left singular vectors (eigenvectors of $AA^\top$)\\
+      $V$: right singular vectors (eigenvectors of $A^\top A$)\\
+      $\sigma_i = \sqrt{\lambda_i}$: singular values\\
+      Always exists; no shape restriction
+    \end{block}
+
+    \column{0.48\textwidth}
+    \begin{block}{PCA (via EVD or SVD)}
+      \textbf{Goal:} Find low-dimensional representation\\
+      \textbf{Tool:} EVD of $\Sigma = \frac{1}{m}X_c^\top X_c$\\
+      \textbf{Shortcut:} SVD of $X_c$ directly\\
+      \textbf{Principal directions} $=$ eigenvectors of $\Sigma$\\
+            $=$ right singular vectors of $X_c$\\
+      \textbf{Variance} along $\mathbf{p}_i$ $=$ $\lambda_i$
+    \end{block}
+
+    \begin{alertblock}{Gram Matrix Trick}
+      When $m \ll n$:\\
+      EVD of $G = \frac{1}{m}X_c X_c^\top$ ($m{\times}m$)\\
+      then $\mathbf{p}_i = \frac{X_c^\top\mathbf{v}_i}{\sqrt{m\lambda_i}}$\\
+      Cost: $O(m^3)$ instead of $O(n^3)$
+    \end{alertblock}
+  \end{columns}
+
+  \medskip
+
+  \begin{center}
+    \large\textit{%
+      ``SVD always exists. EVD needs square matrices.
+        PCA is EVD of the covariance matrix --- or equivalently,
+        SVD of the data matrix.''}
+  \end{center}
+\end{frame}
+
+%==================================================================
+\section{Summary of Basics}
+%==================================================================
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Cauchy--Schwarz Inequality}
+  \begin{block}{Statement}
+    For any two vectors $\mathbf{u}, \mathbf{v}$ in an inner product
+    space:
+    \[
+      \lvert\langle\mathbf{u},\mathbf{v}\rangle\rvert
+        \;\leq\; \|\mathbf{u}\|\,\|\mathbf{v}\|
+    \]
+    In $\mathbb{R}^n$ (dot product form):
+    \[
+      \left(\sum_{i=1}^n u_i v_i\right)^2
+        \leq
+        \left(\sum_{i=1}^n u_i^2\right)
+        \left(\sum_{i=1}^n v_i^2\right)
+    \]
+  \end{block}
+
+  \begin{block}{Proof via Cosine Formula}
+    By definition of the inner product in $\mathbb{R}^n$:
+    \[
+      \langle\mathbf{u},\mathbf{v}\rangle
+        = \|\mathbf{u}\|\,\|\mathbf{v}\|\cos\theta
+    \]
+    Since $|\cos\theta| \leq 1$ for all $\theta \in [0,\pi]$:
+    \[
+      |\langle\mathbf{u},\mathbf{v}\rangle|
+        = \|\mathbf{u}\|\,\|\mathbf{v}\|\,|\cos\theta|
+        \leq \|\mathbf{u}\|\,\|\mathbf{v}\|
+    \]
+    \textbf{Equality} holds iff $|\cos\theta| = 1$, i.e.\
+    $\theta = 0$ or $\pi$, i.e.\
+    $\mathbf{u} = \lambda\mathbf{v}$ for some scalar $\lambda$
+    (vectors are linearly dependent).
+  \end{block}
+
+  \begin{exampleblock}{Connection to PCA}
+    The projection coefficient $\alpha_i = \mathbf{z}^\top\mathbf{p}_i$
+    satisfies $|\alpha_i| \leq \|\mathbf{z}\|\|\mathbf{p}_i\| = \|\mathbf{z}\|$
+    (since $\|\mathbf{p}_i\|=1$). This bounds how much variance a single
+    principal component can capture.
+    The correlation coefficient $\rho_{xy} = \frac{\mathrm{Cov}(x,y)}{\sigma_x\sigma_y}$
+    satisfies $|\rho_{xy}| \leq 1$ precisely because of Cauchy--Schwarz applied
+    to the vectors of centred observations.
+  \end{exampleblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Numerical Example: EVD of $AA^\top$}
+  \begin{block}{Setup}
+    Let $A = \begin{bmatrix} 3 & 0\\ 4 & 5 \end{bmatrix}$.
+    Compute:
+    \[
+      AA^\top
+        = \begin{bmatrix}3&0\\4&5\end{bmatrix}
+          \begin{bmatrix}3&4\\0&5\end{bmatrix}
+        = \begin{bmatrix}9&12\\12&41\end{bmatrix}
+    \]
+  \end{block}
+
+  \begin{block}{Finding Eigenvalues: Characteristic Polynomial}
+    \[
+      \det(AA^\top - \lambda I)
+        = \det\begin{bmatrix}9-\lambda & 12\\ 12 & 41-\lambda\end{bmatrix}
+        = (9-\lambda)(41-\lambda) - 144 = 0
+    \]
+    Expanding: $\lambda^2 - 50\lambda + 369 - 144 = \lambda^2 - 50\lambda + 225 = 0$.
+    Quadratic formula:
+    $\lambda = \dfrac{50 \pm \sqrt{2500 - 900}}{2} = \dfrac{50 \pm 40}{2}$.
+    \[
+      \lambda_1 = 45,\qquad \lambda_2 = 5
+    \]
+    Singular values of $A$: $\sigma_1 = \sqrt{45} = 3\sqrt{5}$,\;
+    $\sigma_2 = \sqrt{5}$.
+  \end{block}
+
+  \begin{block}{Finding Eigenvectors}
+    For $\lambda_1 = 45$: $(AA^\top - 45I)\mathbf{v} = \mathbf{0}$
+    gives $-36x + 12y = 0 \Rightarrow y = 3x$.
+    Normalised: $\mathbf{u}_1 = \frac{1}{\sqrt{10}}[1,\,3]^\top$.\\[4pt]
+    For $\lambda_2 = 5$: $4x + 12y = 0 \Rightarrow x = -3y$.
+    Normalised: $\mathbf{u}_2 = \frac{1}{\sqrt{10}}[-3,\,1]^\top$.\\[4pt]
+    Check orthogonality: $\mathbf{u}_1^\top\mathbf{u}_2
+    = \frac{1}{10}(1\cdot(-3) + 3\cdot 1) = 0$.\;\checkmark\quad
+    (Guaranteed since $AA^\top$ is symmetric.)
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Condition Number and Why SVD Is Numerically Superior}
+  \begin{block}{Definition: Condition Number}
+    For a matrix $X$ with singular values $\sigma_1 \geq \sigma_2 \geq \cdots$,
+    the \textbf{condition number} is:
+    \[
+      \kappa(X) = \frac{\sigma_{\max}}{\sigma_{\min}}
+    \]
+    It measures how much the matrix can \emph{amplify} relative errors
+    in the input.
+    Large $\kappa$ means the matrix is nearly singular and numerical
+    errors are magnified.
+  \end{block}
+
+  \begin{block}{Why Forming $X^\top X$ Squares the Condition Number}
+    Let $X = U\Sigma V^\top$ (SVD). Then:
+    \[
+      X^\top X = V\Sigma^\top U^\top U\Sigma V^\top = V\Sigma^2 V^\top
+    \]
+    The eigenvalues of $X^\top X$ are $\sigma_i^2$ (squares of singular
+    values of $X$). Therefore:
+    \[
+      \kappa(X^\top X)
+        = \frac{\sigma_{\max}^2}{\sigma_{\min}^2}
+        = \left(\frac{\sigma_{\max}}{\sigma_{\min}}\right)^2
+        = \kappa(X)^2
+    \]
+    \textbf{Example:} If $\kappa(X) = 10^3$, then
+    $\kappa(X^\top X) = 10^6$.
+    If $\sigma_{\min} = 10^{-8}$, then $\sigma_{\min}^2 = 10^{-16}$,
+    which is at the threshold of 64-bit floating point machine precision
+    ($\approx 10^{-16}$) --- the computer may treat it as zero,
+    completely destroying that direction's information.
+  \end{block}
+
+  \begin{alertblock}{Practical Conclusion}
+    Direct SVD algorithms (Golub--Kahan bidiagonalisation, QR iterations
+    with Householder reflections) compute $U, \Sigma, V$ from $X$
+    \emph{without ever forming} $X^\top X$.
+    They work with the original singular values $\sigma_i$ rather than
+    their squares, keeping numerical errors minimal.
+    This is why \texttt{sklearn.decomposition.PCA} uses SVD internally.
+  \end{alertblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Theory vs.\ Practice: Finding $V$ in SVD}
+  \begin{block}{What Theory Says}
+    From $A = U\Sigma V^\top$, compute:
+    \[
+      A^\top A = V\Sigma^2 V^\top
+    \]
+    So $V$ consists of the eigenvectors of $A^\top A$, and
+    $U$ consists of the eigenvectors of $AA^\top$.
+    The singular values satisfy $\sigma_i = \sqrt{\lambda_i}$.
+    This is the mathematical \emph{derivation} that connects SVD to EVD.
+  \end{block}
+
+  \begin{block}{What Practice Does}
+    Modern SVD algorithms \textbf{do not form} $A^\top A$ or $AA^\top$.
+    They work directly on $A$ using orthogonal transformations:
+    \begin{enumerate}\setlength\itemsep{4pt}
+      \item \textbf{Bidiagonalisation} (Householder reflections):
+            reduce $A$ to a bidiagonal matrix $B$ such that
+            $A = U_1 B V_1^\top$ with orthogonal $U_1, V_1$.
+      \item \textbf{QR iteration} on $B$: compute SVD of $B$
+            numerically without forming $B^\top B$.
+    \end{enumerate}
+    At no step are eigenvalues of $A^\top A$ computed.
+    The singular values are found directly as $\sigma_i$, not via
+    $\sqrt{\lambda_i(A^\top A)}$, so the squaring step and its
+    numerical damage are avoided entirely.
+  \end{block}
+
+  \begin{exampleblock}{The Key Distinction}
+    \textbf{Theory:} $V$ are eigenvectors of $A^\top A$ --- useful for
+    understanding and deriving.\\
+    \textbf{Practice:} SVD algorithms compute $V$ from $A$ directly,
+    bypassing $A^\top A$ to preserve numerical precision.
+  \end{exampleblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Bessel's Correction: Why Divide by $n-1$?}
+  \begin{block}{The Problem with Dividing by $n$}
+    Given i.i.d.\ samples $X_1,\ldots,X_n$ with true variance $\sigma^2$,
+    define the naive sample variance:
+    $S_n^2 = \frac{1}{n}\sum_{i=1}^n (X_i - \bar{X})^2$.
+    We will show $\mathbb{E}[S_n^2] = \frac{n-1}{n}\sigma^2 \neq \sigma^2$
+    --- it is \textbf{biased downward}.
+  \end{block}
+
+  \begin{block}{Key Identity}
+    Expand by adding and subtracting $\mu$:
+    \begin{align*}
+      \sum_{i=1}^n(X_i - \bar{X})^2
+        &= \sum_{i=1}^n\bigl[(X_i-\mu) - (\bar{X}-\mu)\bigr]^2\\
+        &= \sum_{i=1}^n(X_i-\mu)^2
+           - 2(\bar{X}-\mu)\sum_{i=1}^n(X_i-\mu)
+           + n(\bar{X}-\mu)^2\\
+        &= \sum_{i=1}^n(X_i-\mu)^2 - n(\bar{X}-\mu)^2
+    \end{align*}
+    where we used $\sum_{i=1}^n(X_i - \mu) = n\bar{X} - n\mu = n(\bar{X}-\mu)$.
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Bessel's Correction: Full Derivation}
+  \begin{block}{Taking Expectations}
+    Apply $\mathbb{E}[\,\cdot\,]$ (using linearity) to the identity
+    $\sum(X_i-\bar{X})^2 = \sum(X_i-\mu)^2 - n(\bar{X}-\mu)^2$:
+    \[
+      \mathbb{E}\!\left[\sum_{i=1}^n(X_i-\bar{X})^2\right]
+        = \mathbb{E}\!\left[\sum_{i=1}^n(X_i-\mu)^2\right]
+          - n\,\mathbb{E}\!\left[(\bar{X}-\mu)^2\right]
+    \]
+
+    \textbf{First term:}
+    $\mathbb{E}[(X_i-\mu)^2] = \mathrm{Var}(X_i) = \sigma^2$
+    for each $i$, so
+    $\mathbb{E}\!\left[\sum_{i=1}^n(X_i-\mu)^2\right] = n\sigma^2$.
+
+    \medskip
+
+    \textbf{Second term:}
+    $\mathbb{E}[(\bar{X}-\mu)^2] = \mathrm{Var}(\bar{X})$.
+    Since $X_i$ are i.i.d.:
+    \[
+      \mathrm{Var}(\bar{X})
+        = \mathrm{Var}\!\left(\frac{1}{n}\sum_{i=1}^n X_i\right)
+        = \frac{1}{n^2}\sum_{i=1}^n\mathrm{Var}(X_i)
+        = \frac{1}{n^2}\cdot n\sigma^2
+        = \frac{\sigma^2}{n}
+    \]
+    So $n\,\mathbb{E}[(\bar{X}-\mu)^2] = n\cdot\frac{\sigma^2}{n} = \sigma^2$.
+
+    \medskip
+
+    \textbf{Combining:}
+    \[
+      \mathbb{E}\!\left[\sum_{i=1}^n(X_i-\bar{X})^2\right]
+        = n\sigma^2 - \sigma^2 = (n-1)\sigma^2
+    \]
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Bessel's Correction: Conclusion and Degrees of Freedom}
+  \begin{block}{Biased vs.\ Unbiased Estimator}
+    From the derivation: $\mathbb{E}\!\left[\sum_{i=1}^n(X_i-\bar{X})^2\right] = (n-1)\sigma^2$.
+
+    \medskip
+
+    Dividing by $n$ gives a \textbf{biased} estimator:
+    \[
+      \mathbb{E}[S_n^2]
+        = \mathbb{E}\!\left[\frac{1}{n}\sum(X_i-\bar{X})^2\right]
+        = \frac{1}{n}(n-1)\sigma^2
+        = \frac{n-1}{n}\,\sigma^2 \;\neq\; \sigma^2
+    \]
+    Dividing by $n-1$ gives an \textbf{unbiased} estimator:
+    \[
+      \mathbb{E}[S^2]
+        = \mathbb{E}\!\left[\frac{1}{n-1}\sum(X_i-\bar{X})^2\right]
+        = \frac{1}{n-1}(n-1)\sigma^2
+        = \sigma^2
+      \quad\checkmark
+    \]
+  \end{block}
+
+  \begin{block}{Why $n-1$? The Degrees of Freedom Argument}
+    The deviations $d_i = X_i - \bar{X}$ satisfy the constraint
+    $\sum_{i=1}^n d_i = 0$ (deviations always sum to zero by definition
+    of the mean).
+    This means once $n-1$ deviations are known, the $n$-th is completely
+    determined.
+    Only $n-1$ deviations are \emph{free to vary} --- there are
+    $n-1$ \textbf{degrees of freedom}.
+    Intuitively: we used one degree of freedom to \emph{estimate} $\mu$
+    by $\bar{X}$ from the same data, leaving $n-1$ independent pieces
+    of information for the variance estimate.
+  \end{block}
+
+  \begin{alertblock}{Connection to PCA / Covariance Matrix}
+    In PCA with zero-mean data, we use $\Sigma = \frac{1}{m}X_c^\top X_c$.
+    The factor $m$ is a convention common in machine learning
+    (population variance, not sample variance).
+    If using sample covariance (statistics convention), divide by $m-1$.
+    For large $m$, the difference is negligible and does not affect which
+    eigenvectors are found --- only the scale of eigenvalues.
+  \end{alertblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}
+  \Huge{\centerline{Thank You}}
+  \vspace{0.6cm}
+  \large{\centerline{Questions?}}
+\end{frame}
+
+%==================================================================
+\section*{Summary of Basics}
+%==================================================================
+
+%------------------------------------------------------------------
+% (A) CAUCHY--SCHWARZ
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Summary of Basics --- Cauchy--Schwarz Inequality}
+  \begin{block}{Statement (Inner-Product Form)}
+    For any vectors $\mathbf{u}, \mathbf{v}$ in an inner-product space:
+    \[
+      |\langle \mathbf{u}, \mathbf{v}\rangle|
+        \;\leq\;
+        \|\mathbf{u}\|\,\|\mathbf{v}\|
+    \]
+    In $\mathbb{R}^n$ with the standard dot product:
+    \[
+      \left(\sum_{i=1}^n u_i v_i\right)^{\!2}
+        \;\leq\;
+        \left(\sum_{i=1}^n u_i^2\right)
+        \left(\sum_{i=1}^n v_i^2\right)
+    \]
+  \end{block}
+
+  \begin{block}{Proof via the Cosine Formula}
+    Recall the projection of $\mathbf{u}$ onto $\mathbf{v}$:
+    \[
+      \langle \mathbf{u},\mathbf{v}\rangle
+        = \|\mathbf{u}\|\,\|\mathbf{v}\|\cos\theta
+    \]
+    where $\theta$ is the angle between them.
+    Since $|\cos\theta| \leq 1$ for all $\theta$:
+    \[
+      |\langle \mathbf{u},\mathbf{v}\rangle|
+        = \|\mathbf{u}\|\,\|\mathbf{v}\|\,|\cos\theta|
+        \leq \|\mathbf{u}\|\,\|\mathbf{v}\|
+    \]
+    Equality holds $\Leftrightarrow |\cos\theta|=1 \Leftrightarrow
+    \theta \in \{0^\circ,180^\circ\} \Leftrightarrow
+    \mathbf{u} = \lambda\mathbf{v}$ for some scalar $\lambda$
+    (vectors are \emph{linearly dependent}).
+  \end{block}
+
+  \begin{exampleblock}{Numerical Check: $\mathbf{u}=(1,2),\,\mathbf{v}=(3,4)$}
+    $\langle\mathbf{u},\mathbf{v}\rangle = 11$;\quad
+    $\|\mathbf{u}\|\|\mathbf{v}\| = \sqrt{5}\cdot 5 = 5\sqrt{5} \approx 11.18$.
+    Indeed $11 \leq 11.18$. \checkmark
+  \end{exampleblock}
+
+  \begin{alertblock}{Why It Appears in PCA}
+    The correlation coefficient $\rho_{xy} = \frac{\mathrm{Cov}(x,y)}{\sigma_x\sigma_y}$
+    satisfies $|\rho_{xy}| \leq 1$ precisely because of Cauchy--Schwarz:
+    $|\mathrm{Cov}(x,y)| \leq \sqrt{\mathrm{Var}(x)\,\mathrm{Var}(y)}$.
+    This guarantees the covariance matrix is PSD and that correlation
+    is a bounded, well-defined measure.
+  \end{alertblock}
+\end{frame}
+
+%------------------------------------------------------------------
+% (B) CONDITION NUMBER
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Summary of Basics --- Condition Number}
+  \begin{block}{Definition}
+    For a matrix $X$ with singular values
+    $\sigma_1 \geq \sigma_2 \geq \cdots \geq \sigma_r > 0$, the
+    \textbf{condition number} is:
+    \[
+      \kappa(X)
+        = \frac{\sigma_{\max}}{\sigma_{\min}}
+        = \frac{\sigma_1}{\sigma_r}
+    \]
+    It measures the \emph{ratio of maximum to minimum stretching}
+    performed by $X$.
+    A large $\kappa$ means the matrix nearly collapses some directions:
+    small input perturbations in those directions become large output errors.
+  \end{block}
+
+  \begin{block}{Why $X^\top X$ Squares the Condition Number}
+    Let $X = U\Sigma V^\top$ (SVD).
+    Then $X^\top X = V\Sigma^2 V^\top$, whose eigenvalues are
+    $\sigma_1^2 \geq \cdots \geq \sigma_r^2$.
+    Therefore:
+    \[
+      \kappa(X^\top X)
+        = \frac{\sigma_1^2}{\sigma_r^2}
+        = \left(\frac{\sigma_1}{\sigma_r}\right)^{\!2}
+        = \kappa(X)^2
+    \]
+    \textbf{Forming $X^\top X$ squares the condition number.}
+    Example: if $\kappa(X) = 10^3$, then $\kappa(X^\top X) = 10^6$.
+    If $\sigma_{\min}(X) = 10^{-8}$, then
+    $\sigma_{\min}(X^\top X) = 10^{-16}$, which is at machine-epsilon:
+    the computer may treat this eigenvalue as zero, destroying accuracy.
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=30]{Summary of Basics --- Why PCA Uses SVD Directly}
+  \begin{block}{Two Routes to the Principal Directions $V$}
+    \textbf{Route 1 (Covariance / EVD):}
+    \[
+      X \;\xrightarrow{\text{form}}\; X^\top X
+        \;\xrightarrow{\text{EVD}}\; V
+    \]
+    Eigenvalues of $X^\top X$ are $\lambda_i = \sigma_i^2$.
+    Condition number goes from $\kappa(X)$ to $\kappa(X)^2$.
+
+    \medskip
+
+    \textbf{Route 2 (Direct SVD):}
+    \[
+      X \;\xrightarrow{\text{SVD}}\; U,\,\Sigma,\,V
+    \]
+    Modern algorithms (Golub--Kahan bidiagonalisation + QR iteration)
+    apply orthogonal transformations (Householder reflections)
+    \emph{directly} to $X$ --- they never form $X^\top X$.
+    They compute $\sigma_i$ without squaring them, so numerical
+    precision is preserved.
+  \end{block}
+
+  \begin{block}{Worked Condition Number Example}
+    Suppose $\sigma_{\max}(X)=10^4,\ \sigma_{\min}(X)=10^{-4}$.
+
+    \centering
+    \renewcommand{\arraystretch}{1.4}
+    \begin{tabular}{lcc}
+      \toprule
+      \textbf{Approach} & \textbf{Extremal values seen} & \textbf{$\kappa$}\\
+      \midrule
+      Direct SVD on $X$ & $10^4,\ 10^{-4}$ & $10^8$\\
+      EVD on $X^\top X$ & $10^8,\ 10^{-8}$ & $10^{16}$\\
+      \bottomrule
+    \end{tabular}
+
+    \medskip
+    At $\kappa = 10^{16}$ the ratio exceeds double-precision
+    machine epsilon ($\approx 10^{-16}$): the smallest eigenvalue
+    is indistinguishable from zero numerically.
+    That is why \texttt{sklearn.decomposition.PCA} uses SVD internally.
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+% (C) AA^T EXAMPLE: EIGENVALUES AND EIGENVECTORS
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Summary of Basics --- Computing Eigenvalues of $AA^\top$}
+  \begin{block}{Setup}
+    Let $A = \begin{bmatrix}3 & 0\\4 & 5\end{bmatrix}$.
+    Compute $AA^\top$:
+    \[
+      AA^\top
+        = \begin{bmatrix}3&0\\4&5\end{bmatrix}
+          \begin{bmatrix}3&4\\0&5\end{bmatrix}
+        = \begin{bmatrix}9&12\\12&41\end{bmatrix}
+    \]
+  \end{block}
+
+  \begin{block}{Finding Eigenvalues via the Characteristic Polynomial}
+    Solve $\det(AA^\top - \lambda I) = 0$:
+    \[
+      \det\begin{bmatrix}9-\lambda & 12\\12 & 41-\lambda\end{bmatrix}
+        = (9-\lambda)(41-\lambda) - 144 = 0
+    \]
+    Expand: $\lambda^2 - 50\lambda + 369 - 144 = 0$,\;
+    i.e.\ $\lambda^2 - 50\lambda + 225 = 0$.
+    By the quadratic formula:
+    \[
+      \lambda = \frac{50 \pm \sqrt{2500 - 900}}{2}
+              = \frac{50 \pm 40}{2}
+      \quad\Rightarrow\quad
+      \lambda_1 = 45,\quad \lambda_2 = 5
+    \]
+    Singular values of $A$: $\sigma_1 = \sqrt{45} = 3\sqrt{5}$,\;
+    $\sigma_2 = \sqrt{5}$.
+    Condition number: $\kappa(A) = \sqrt{45/5} = 3$.
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Summary of Basics --- Eigenvectors of $AA^\top$ (Worked)}
+  \begin{block}{Eigenvector for $\lambda_1 = 45$}
+    $(AA^\top - 45I)\mathbf{u} = \mathbf{0}$:
+    \[
+      \begin{bmatrix}-36&12\\12&-4\end{bmatrix}
+      \begin{bmatrix}x\\y\end{bmatrix}
+      = \mathbf{0}
+      \;\Rightarrow\; -36x + 12y = 0 \;\Rightarrow\; y = 3x
+    \]
+    Eigenvector (unnormalised): $[1,\ 3]^\top$.
+    Normalised:
+    $\mathbf{u}_1 = \frac{1}{\sqrt{10}}[1,\ 3]^\top$.
+  \end{block}
+
+  \begin{block}{Eigenvector for $\lambda_2 = 5$}
+    $(AA^\top - 5I)\mathbf{u} = \mathbf{0}$:
+    \[
+      \begin{bmatrix}4&12\\12&36\end{bmatrix}
+      \begin{bmatrix}x\\y\end{bmatrix}
+      = \mathbf{0}
+      \;\Rightarrow\; 4x + 12y = 0 \;\Rightarrow\; x = -3y
+    \]
+    Eigenvector (unnormalised): $[-3,\ 1]^\top$.
+    Normalised:
+    $\mathbf{u}_2 = \frac{1}{\sqrt{10}}[-3,\ 1]^\top$.
+  \end{block}
+
+  \begin{exampleblock}{Orthogonality Check}
+    $\mathbf{u}_1^\top\mathbf{u}_2
+     = \frac{1}{10}(1\cdot(-3) + 3\cdot 1) = 0$. \checkmark\;
+    (As guaranteed by the Spectral Theorem: eigenvectors of a real
+    symmetric matrix corresponding to \emph{distinct} eigenvalues
+    are orthogonal.)
+  \end{exampleblock}
+\end{frame}
+
+%------------------------------------------------------------------
+% (D) BESSEL'S CORRECTION
+%------------------------------------------------------------------
+\begin{frame}[shrink=35]{Summary of Basics --- Bessel's Correction: The Key Lemma}
+  \begin{block}{Claim}
+    \[
+      E\!\left[\sum_{i=1}^n (X_i - \bar{X})^2\right] = (n-1)\sigma^2
+    \]
+    where $X_1,\ldots,X_n \overset{\text{i.i.d.}}{\sim}$ distribution
+    with mean $\mu$ and variance $\sigma^2$,
+    and $\bar{X} = \frac{1}{n}\sum_{i=1}^n X_i$.
+  \end{block}
+
+  \begin{block}{Proof: Algebraic Decomposition}
+    Write $X_i - \bar{X} = (X_i - \mu) - (\bar{X} - \mu)$.
+    Then:
+    \[
+      \sum_{i=1}^n(X_i - \bar{X})^2
+        = \sum_{i=1}^n(X_i-\mu)^2
+          - 2(\bar{X}-\mu)\underbrace{\sum_{i=1}^n(X_i-\mu)}_{n(\bar{X}-\mu)}
+          + n(\bar{X}-\mu)^2
+    \]
+    \[
+      = \sum_{i=1}^n(X_i-\mu)^2 - n(\bar{X}-\mu)^2
+    \]
+    Take expectation:
+    \[
+      E\!\left[\sum_{i=1}^n(X_i-\bar{X})^2\right]
+        = E\!\left[\sum_{i=1}^n(X_i-\mu)^2\right]
+          - n\,E\!\left[(\bar{X}-\mu)^2\right]
+    \]
+    $= n\sigma^2 - n\cdot\dfrac{\sigma^2}{n} = n\sigma^2 - \sigma^2
+    = (n-1)\sigma^2$.
+    \hfill (using $E[(X_i-\mu)^2]=\sigma^2$ and
+    $\mathrm{Var}(\bar{X})=\sigma^2/n$)
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=45]{Summary of Basics --- Bessel's Correction: Bias and Unbiasedness}
+  \begin{block}{Why Dividing by $n$ is Biased}
+    Define $S_n^2 = \dfrac{1}{n}\sum_{i=1}^n(X_i - \bar{X})^2$.
+    By the lemma and linearity of expectation ($E[cY] = cE[Y]$):
+    \[
+      E[S_n^2]
+        = \frac{1}{n}\,E\!\left[\sum_{i=1}^n(X_i-\bar{X})^2\right]
+        = \frac{1}{n}(n-1)\sigma^2
+        = \frac{n-1}{n}\sigma^2
+        \;\neq\; \sigma^2
+    \]
+    The estimator systematically \emph{underestimates} $\sigma^2$
+    by a factor $\frac{n-1}{n}$.
+  \end{block}
+
+  \begin{block}{Bessel's Correction: Divide by $n-1$}
+    Define $S^2 = \dfrac{1}{n-1}\sum_{i=1}^n(X_i-\bar{X})^2$.
+    Then:
+    \[
+      E[S^2]
+        = \frac{1}{n-1}\,(n-1)\sigma^2
+        = \sigma^2
+    \]
+    $S^2$ is an \textbf{unbiased estimator} of $\sigma^2$.
+  \end{block}
+
+  \begin{block}{Degrees of Freedom: Why $n-1$?}
+    The $n$ deviations $d_i = X_i - \bar{X}$ satisfy
+    $\sum_{i=1}^n d_i = 0$ (since $\sum X_i = n\bar{X}$).
+    This single linear constraint reduces the dimension of the
+    space in which $(d_1,\ldots,d_n)$ lives from $n$ to $n-1$.
+    Knowing any $n-1$ deviations determines the $n$-th:
+    $d_n = -\sum_{i=1}^{n-1}d_i$.
+    Hence there are $n-1$ \textbf{degrees of freedom} ---
+    and we divide by $n-1$.
+  \end{block}
+
+  \begin{alertblock}{Connection to PCA}
+    In PCA we use $\Sigma = \frac{1}{m}X_c^\top X_c$ (divide by $m$,
+    not $m-1$) --- a population-variance convention common in ML.
+    Eigenvectors are identical either way; only eigenvalue \emph{scale}
+    differs by $\frac{m}{m-1}$, which is negligible for large $m$.
+  \end{alertblock}
+\end{frame}
+
+\end{document}

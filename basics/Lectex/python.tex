@@ -1,0 +1,1851 @@
+\documentclass[12pt,a4paper]{article}
+
+% -- Packages ------------------------------------------------------------------
+\usepackage[a4paper, top=2cm, bottom=2cm, left=2.2cm, right=2.2cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{mdframed}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{titletoc}
+\usepackage{fancyhdr}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{multicol}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{tcolorbox}
+\usepackage{fontawesome5}
+\usepackage{parskip}
+\usepackage{soul}
+\usepackage{tikz}
+\usepackage{pgffor}
+
+\tcbuselibrary{skins, breakable, listingsutf8}
+
+% -- Colours -------------------------------------------------------------------
+\definecolor{pyblue}{HTML}{1F4E79}
+\definecolor{pyteal}{HTML}{006B6B}
+\definecolor{pyorange}{HTML}{C05000}
+\definecolor{pygreen}{HTML}{1A6B1A}
+\definecolor{pyred}{HTML}{8B0000}
+\definecolor{pygray}{HTML}{F4F6F9}
+\definecolor{pyborder}{HTML}{CCCCCC}
+\definecolor{codebg}{HTML}{F0F2F5}
+\definecolor{codeframe}{HTML}{C8D0DC}
+\definecolor{kwcolor}{HTML}{0000CD}
+\definecolor{strcolor}{HTML}{A31515}
+\definecolor{cmtcolor}{HTML}{608B4E}
+\definecolor{numcolor}{HTML}{098658}
+\definecolor{builtincolor}{HTML}{795E26}
+\definecolor{noteblue}{HTML}{E8F4FD}
+\definecolor{noteborder}{HTML}{2196F3}
+\definecolor{warnbg}{HTML}{FFF8E1}
+\definecolor{warnborder}{HTML}{FF8F00}
+\definecolor{tipbg}{HTML}{E8F5E9}
+\definecolor{tipborder}{HTML}{388E3C}
+\definecolor{dangerbg}{HTML}{FFEBEE}
+\definecolor{dangerborder}{HTML}{C62828}
+
+% -- Listings (Python syntax highlight) ----------------------------------------
+\lstdefinestyle{python}{
+  language=Python,
+  backgroundcolor=\color{codebg},
+  frame=single,
+  framesep=6pt,
+  rulecolor=\color{codeframe},
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{kwcolor}\bfseries,
+  stringstyle=\color{strcolor},
+  commentstyle=\color{cmtcolor}\itshape,
+  numberstyle=\tiny\color{gray},
+  numbers=left,
+  numbersep=8pt,
+  stepnumber=1,
+  tabsize=4,
+  showspaces=false,
+  showstringspaces=false,
+  breaklines=true,
+  breakatwhitespace=false,
+  captionpos=b,
+  morekeywords={self, cls, None, True, False, lambda, yield, async, await},
+  emph={print, range, len, type, input, int, float, str, list, dict, set, tuple, super, zip, map, filter, enumerate, sorted, reversed, open, isinstance},
+  emphstyle=\color{builtincolor}\bfseries,
+  xleftmargin=10pt,
+  xrightmargin=4pt,
+  aboveskip=8pt,
+  belowskip=8pt,
+}
+\lstset{style=python}
+
+% -- Inline code ---------------------------------------------------------------
+\newcommand{\code}[1]{\texttt{\small\color{pyblue}#1}}
+
+% -- tcolorbox environments ----------------------------------------------------
+\tcbset{
+  base/.style={
+    breakable, enhanced, fonttitle=\bfseries\small,
+    left=6pt, right=6pt, top=4pt, bottom=4pt,
+    boxrule=0.5pt,
+  }
+}
+
+\newtcolorbox{notebox}[1][]{
+  base, colback=noteblue, colframe=noteborder,
+  title={\faInfoCircle\ Note}, #1
+}
+\newtcolorbox{warnbox}[1][]{
+  base, colback=warnbg, colframe=warnborder,
+  title={\faExclamationTriangle\ Warning}, #1
+}
+\newtcolorbox{tipbox}[1][]{
+  base, colback=tipbg, colframe=tipborder,
+  title={\faLightbulb\ Tip}, #1
+}
+\newtcolorbox{dangerbox}[1][]{
+  base, colback=dangerbg, colframe=dangerborder,
+  title={\faBomb\ Watch Out}, #1
+}
+\newtcolorbox{conceptbox}[2][]{
+  base, colback=pygray, colframe=pyblue,
+  title={\faCode\ #2}, #1
+}
+\newtcolorbox{summarybox}[1][]{
+  base, colback=pygray, colframe=pyteal,
+  title={Section Summary}, #1
+}
+
+% -- Section formatting --------------------------------------------------------
+\titleformat{\section}
+  {\color{pyblue}\Large\bfseries}
+  {\thesection.}{0.5em}{}
+  [\color{pyblue}\titlerule]
+\titleformat{\subsection}
+  {\color{pyteal}\large\bfseries}
+  {\thesubsection}{0.5em}{}
+\titleformat{\subsubsection}
+  {\color{pyorange}\normalsize\bfseries}
+  {\thesubsubsection}{0.5em}{}
+
+\titlespacing*{\section}{0pt}{18pt}{8pt}
+\titlespacing*{\subsection}{0pt}{12pt}{4pt}
+\titlespacing*{\subsubsection}{0pt}{8pt}{4pt}
+
+% -- Header / Footer -----------------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{pyblue}\bfseries Python -- Lecture Notes}
+\fancyhead[R]{\small\color{gray}\thesection\ \leftmark}
+\fancyfoot[C]{\small\color{gray}\thepage}
+\setlength{\headheight}{14pt}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\footrulewidth}{0.3pt}
+
+% -- Hyperref ------------------------------------------------------------------
+\hypersetup{
+  colorlinks=true, linkcolor=pyblue, urlcolor=pyteal,
+  pdftitle={Python Lecture Notes}, pdfauthor={Student Notes}
+}
+
+% -- List settings -------------------------------------------------------------
+\setlist[itemize]{leftmargin=1.5em, topsep=2pt, itemsep=1pt, parsep=0pt}
+\setlist[enumerate]{leftmargin=1.5em, topsep=2pt, itemsep=1pt, parsep=0pt}
+
+% -----------------------------------------------------------------------------
+\begin{document}
+% -----------------------------------------------------------------------------
+
+% -- Title page ----------------------------------------------------------------
+\begin{titlepage}
+  \centering
+  \vspace*{2cm}
+  {\Huge\bfseries\color{pyblue} Python -- Complete Lecture Notes \par}
+  \vspace{0.5cm}
+  {\large\color{gray} From Core Syntax to OOP, Functional Programming \& Concurrency \par}
+  \vspace{1.5cm}
+  \begin{tcolorbox}[colback=pyblue!8, colframe=pyblue, width=0.8\textwidth]
+    \centering
+    \textit{``Python is designed so that any developer can learn it.\\
+    It is meant for everyone, not just specialists.''} \\[4pt]
+    \small --- Guido van Rossum, Creator of Python (1991)
+  \end{tcolorbox}
+  \vspace{1.5cm}
+  {\large\bfseries Topics Covered \par}
+  \vspace{0.4cm}
+  \begin{multicols}{2}
+    \begin{itemize}[leftmargin=1em]
+      \item Why Python? Language overview
+      \item Data types \& memory model
+      \item Operators \& expressions
+      \item Strings \& collections
+      \item Control flow \& loops
+      \item Functions \& closures
+      \item Modules \& packages
+      \item OOP -- Classes \& objects
+      \item Inheritance \& polymorphism
+      \item Abstraction \& decorators
+      \item Exception handling
+      \item Threads \& multiprocessing
+    \end{itemize}
+  \end{multicols}
+  \vfill
+  {\small\color{gray} Personal study notes -- Intermediate level \par}
+\end{titlepage}
+
+% -- Table of Contents ---------------------------------------------------------
+\tableofcontents
+\newpage
+
+% -----------------------------------------------------------------------------
+\section{Python at a Glance}
+% -----------------------------------------------------------------------------
+
+\subsection{What is Python?}
+
+Python is a \textbf{high-level, general-purpose, multi-paradigm} programming language first released in \textbf{1991} by Guido van Rossum. ``High-level'' means it reads close to English -- you don't write ones and zeros or assembly instructions. The interpreter converts your code to machine code at runtime.
+
+\begin{notebox}
+\textbf{Why ``high-level'' matters:}
+Assembly languages were hardware-close but painful. C/C++ improved things but are complex. Python's goal was simplicity -- anyone should be able to program, not just specialists.
+\end{notebox}
+
+\subsection{Multi-Paradigm Support}
+
+Python doesn't force one style. You can write code in whichever style fits your problem:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Paradigm} & \textbf{Core Idea} & \textbf{Examples in other languages} \\
+\midrule
+Procedural & Step-by-step instructions, functions & C \\
+Object-Oriented & Model reality as objects & Java, C\# \\
+Functional & Functions as values, avoid state & Haskell, JS \\
+Structured & Blocks, conditions, loops & Most languages \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Why Python is Famous}
+
+\begin{itemize}
+  \item \textbf{Easiest to read/write:} Syntax feels like English.
+  \item \textbf{Huge community:} Millions of developers = tons of libraries.
+  \item \textbf{AI/ML ecosystem:} NumPy, Pandas, TensorFlow, PyTorch -- all Python.
+  \item \textbf{Web development:} Django, Flask, Tornado.
+  \item \textbf{System scripting, automation, data science, GUIs.}
+\end{itemize}
+
+\subsection{How Python Runs}
+
+\begin{enumerate}
+  \item You write \code{.py} files.
+  \item Python's \textbf{CPython interpreter} compiles to bytecode (\code{.pyc}).
+  \item The Python Virtual Machine (PVM) executes bytecode.
+  \item OS and hardware execute the final machine instructions.
+\end{enumerate}
+
+\begin{tipbox}
+You can test code in the Python REPL (interactive prompt) by typing \code{python} in your terminal. The \texttt{>>>} prompt means you're in REPL mode. Type \code{exit()} to leave.
+\end{tipbox}
+
+% -----------------------------------------------------------------------------
+\section{Variables, Memory Model \& the Object System}
+% -----------------------------------------------------------------------------
+
+\subsection{Variables are References, Not Boxes}
+
+This is the single most important mental model shift from C/Java. In Python, a variable is not a container holding a value. It is a \textbf{label} (reference) that points to an \textbf{object} in memory.
+
+\begin{lstlisting}
+a = 5        # Creates int object 5 in memory. 'a' points to it.
+b = 5        # Python finds existing 5 object. 'b' ALSO points to same object.
+print(id(a) == id(b))   # True -- same identity!
+
+b = 6        # New int object 6 created. 'b' now points to 6.
+print(id(a) == id(b))   # False -- different objects now.
+\end{lstlisting}
+
+\begin{notebox}
+\textbf{id()} returns a unique integer identifying an object's memory location. Two objects with the same id are the same object.
+\end{notebox}
+
+\subsection{Garbage Collection}
+
+When no variable points to an object, Python's garbage collector reclaims its memory. You don't manage memory manually.
+
+\begin{lstlisting}
+a = 5    # object 5, referenced by a
+b = 5    # same object 5, referenced by a and b
+b = 6    # object 6 for b. Object 5 still has 'a'.
+a = 10   # Now object 5 has ZERO references -> garbage collected.
+\end{lstlisting}
+
+\subsection{String Interning}
+
+Python caches small integers (typically \(-5\) to \(256\)) and short strings as an optimization. This means \code{a = 5; b = 5} share the same object. For large strings or numbers, Python creates separate objects even with identical values.
+
+\begin{lstlisting}
+a = "hello"
+b = "hello"
+print(id(a) == id(b))   # Usually True -- interned (short, simple string)
+
+a = "my favorite color is blue"
+b = "my favorite color is blue"
+print(id(a) == id(b))   # False -- too long, not interned
+\end{lstlisting}
+
+\subsection{Multiple Assignment}
+
+Python supports elegant multiple assignment using tuple packing/unpacking:
+
+\begin{lstlisting}
+x, y = 6, 5          # Assign in one line
+x, y = y, x          # Swap! Behind the scenes: tuple pack then unpack.
+a = b = c = 0        # Chain assignment -- all point to same 0 object
+\end{lstlisting}
+
+% -----------------------------------------------------------------------------
+\section{Data Types}
+% -----------------------------------------------------------------------------
+
+\subsection{Numeric Types}
+
+\begin{lstlisting}
+x = 10          # int -- unlimited precision in Python
+pi = 3.14       # float -- IEEE 754 double precision
+c = 3 + 4j      # complex -- uses 'j' not 'i'
+
+# Type conversion
+k = int(pi)     # 3  -- truncates, doesn't round
+p = float(k)    # 3.0
+c = complex(2, 3)  # (2+3j)
+
+# Check
+print(type(x))  # <class 'int'>
+\end{lstlisting}
+
+\begin{notebox}
+\textbf{Boolean is a subtype of int:}
+\code{True == 1} and \code{False == 0}. So \code{int(True)} gives 1. You can even do \code{True + True == 2}.
+\end{notebox}
+
+\subsection{Strings}
+
+Strings are \textbf{immutable sequences of characters}. Once created, characters cannot be changed in-place.
+
+\begin{lstlisting}
+name = 'Naven'          # single quotes
+msg  = "Hello world"    # double quotes
+para = """Line one
+Line two"""             # triple quotes -- multi-line
+
+# Indexing (0-based)
+print(name[0])     # 'N'   (first character)
+print(name[-1])    # 'n'   (last character)
+
+# Slicing [start:stop:step]  -- stop is EXCLUSIVE
+text = 'telusko'
+print(text[3:7])   # 'usko'  -- indices 3,4,5,6
+print(text[:3])    # 'tel'   -- from start to index 2
+print(text[3:])    # 'usko'  -- from index 3 to end
+print(text[-4:])   # 'usko'  -- last 4 characters
+print(text[::2])   # 'tlso'  -- every second character
+
+# Repetition
+print('Na' * 3)    # 'NaNaNa'
+
+# f-strings (preferred formatting)
+age = 30
+print(f"My name is {name} and I am {age} years old.")
+print(f"Pi is approximately {3.14159:.2f}")  # 2 decimal places
+\end{lstlisting}
+
+\subsubsection{Escape Sequences}
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Escape} & \textbf{Meaning} \\
+\midrule
+\texttt{\textbackslash n} & Newline \\
+\texttt{\textbackslash t} & Tab \\
+\texttt{\textbackslash\textbackslash} & Literal backslash \\
+\texttt{\textbackslash '} & Single quote inside single-quoted string \\
+\texttt{\textbackslash "} & Double quote inside double-quoted string \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{lstlisting}
+# Problem: Windows path
+path = "C:\\Users\\Naven"   # double backslash to escape
+# OR use raw string:
+path = r"C:\Users\Naven"    # r prefix means no escape processing
+\end{lstlisting}
+
+\subsubsection{Key String Methods}
+
+\begin{lstlisting}
+s = "  Hello, Python!  "
+print(s.strip())         # "Hello, Python!"  -- remove whitespace
+print(s.lower())         # "  hello, python!  "
+print(s.upper())         # "  HELLO, PYTHON!  "
+print(s.replace("Python", "World"))  # "  Hello, World!  "
+print(s.split(","))      # ["  Hello", " Python!  "]
+print(",".join(["a", "b", "c"]))  # "a,b,c"
+print(s.find("Python"))  # index of first match (-1 if not found)
+print(len(s))            # length including spaces
+\end{lstlisting}
+
+\subsection{Lists}
+
+Lists are \textbf{ordered, mutable, allow duplicates} and can hold mixed types.
+
+\begin{lstlisting}
+nums = [45, 87, 21, 24, 99]      # list of integers
+mix  = [1, "hello", 3.14, True]  # mixed types -- totally fine
+
+# Access
+print(nums[0])     # 45
+print(nums[-1])    # 99
+
+# Slicing works same as strings
+print(nums[1:3])   # [87, 21]
+
+# Common methods
+nums.append(33)    # Add at end
+nums.insert(1, 55) # Insert 55 at index 1; shifts others right
+nums.remove(87)    # Remove first occurrence of value 87
+val = nums.pop()   # Remove and return LAST element
+val = nums.pop(2)  # Remove and return element at index 2
+nums.reverse()     # Reverse in-place
+nums.sort()        # Sort in-place (ascending by default)
+count = nums.count(21)   # Number of times 21 appears
+idx   = nums.index(24)   # Index of first occurrence of 24
+
+# del keyword for slices
+del nums[2:4]      # Remove elements at index 2 and 3
+
+# Extend vs Append
+nums.extend([100, 200])  # Adds each element from iterable
+nums.append([100, 200])  # Adds the LIST as a single element
+
+# Python built-in functions on lists
+print(min(nums), max(nums), sum(nums), len(nums))
+\end{lstlisting}
+
+\begin{notebox}
+\textbf{List inside list (nested):} \code{mix = [nums, names]} -- each inner list is a single element. Access with \code{mix[0][2]} -- first list, third element.
+\end{notebox}
+
+\subsection{Tuples}
+
+Tuples are \textbf{ordered and immutable}. Use them when data should not change.
+
+\begin{lstlisting}
+t = (23, 45, 67, 43)   # with parentheses
+t = 23, 45, 67, 43     # parentheses optional -- same result
+
+# Single-element tuple NEEDS trailing comma
+single = (42,)   # This is a tuple
+not_tuple = (42) # This is just int 42 in parentheses
+
+# Access and slicing work same as list
+print(t[1])     # 45
+print(t[-1])    # 43
+print(t[1:3])   # (45, 67)
+
+# Only two methods (can't mutate)
+print(t.count(45))  # occurrences
+print(t.index(67))  # index of value
+
+# Immutable = cannot reassign elements
+# t[0] = 99  -> TypeError: tuple does not support item assignment
+
+# Tuple UNPACKING
+num, name, score = (1, "Naven", 95.5)
+print(num, name, score)
+
+# Multiple return values use tuple implicitly
+def minmax(lst):
+    return min(lst), max(lst)   # returns a tuple
+
+lo, hi = minmax([3, 1, 7, 2])
+\end{lstlisting}
+
+\begin{tipbox}
+\textbf{When to use tuple vs list?} Tuple = fixed data (coordinates, RGB colour, database row). List = collection that grows/shrinks. Tuples are slightly faster and signal ``this won't change''.
+\end{tipbox}
+
+\subsection{Sets}
+
+Sets are \textbf{unordered collections of unique elements}. Perfect for membership testing and eliminating duplicates.
+
+\begin{lstlisting}
+s1 = {23, 56, 78, 21, 56}  # duplicate 56 silently removed
+print(s1)   # {56, 21, 78, 23} -- order may vary (hashed internally)
+
+# Empty set MUST use set() -- {} creates an empty DICT
+empty = set()
+
+# Membership test -- O(1) speed due to hashing
+print(21 in s1)   # True
+print(99 in s1)   # False
+
+# Set operations (mirrors math set theory)
+s2 = {'a', 'b', 'c', 'd', 'm'}
+s3 = {'a', 'e', 'i', 'o', 'u', 'd', 'p'}
+
+print(s2 - s3)    # Difference: in s2 but NOT in s3
+print(s2 | s3)    # Union: all elements from both
+print(s2 & s3)    # Intersection: only common elements
+print(s2 ^ s3)    # Symmetric difference: in one but NOT both
+\end{lstlisting}
+
+\begin{notebox}
+\textbf{Why unordered?} Each element is hashed. Python uses the hash to decide where to store it -- this makes lookup O(1) instead of O(n). The side effect: order is not preserved.
+\end{notebox}
+
+\subsection{Dictionaries}
+
+Dictionaries are \textbf{key-value pairs}. Keys form a set (unique, unordered). Values form a list (can repeat). Think of a real dictionary: word -> meaning.
+
+\begin{lstlisting}
+phone_book = {
+    "Naven":  9876543210,
+    "Kiran":  8765432109,
+    "Hush":   7654321098,
+}
+
+# Access by key (KeyError if missing)
+print(phone_book["Naven"])      # 9876543210
+
+# .get() -- safe access, returns None (or default) if key missing
+print(phone_book.get("Naven"))         # 9876543210
+print(phone_book.get("Unknown"))       # None
+print(phone_book.get("Unknown", -1))   # -1 (custom default)
+
+# Add / update
+phone_book["Social"] = 6543210987  # Add new key
+phone_book["Naven"] = 1111111111   # Update existing key
+
+# Delete
+phone_book.pop("Hush")       # Remove and return value
+del phone_book["Social"]     # Remove without returning
+
+# Iteration
+for key in phone_book:
+    print(key, "->", phone_book[key])
+
+for key, val in phone_book.items():   # Pythonic way
+    print(f"{key}: {val}")
+
+# Nested dict / dict with list values
+data = {
+    "js":     "VSCode",
+    "python": ["VSCode", "PyCharm"],
+    "java":   {"core": "VSCode", "spring": "IntelliJ"}
+}
+print(data["java"]["spring"])   # "IntelliJ"
+\end{lstlisting}
+
+\subsubsection{Creating from Sets + Lists}
+
+\begin{lstlisting}
+keys   = {"Naven", "Hitesh", "Shamik"}  # set -- unique keys
+values = [34, 64, 87]                   # list of values
+
+# zip + dict -- combines into dict
+d = dict(zip(keys, values))
+# Note: set order is not guaranteed, so key-value pairing may vary.
+# Use a list for keys if order matters:
+keys = ["Naven", "Hitesh", "Shamik"]
+d = dict(zip(keys, values))
+print(d)   # {'Naven': 34, 'Hitesh': 64, 'Shamik': 87}
+\end{lstlisting}
+
+% -----------------------------------------------------------------------------
+\section{Operators}
+% -----------------------------------------------------------------------------
+
+\subsection{Arithmetic Operators}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Operator} & \textbf{Name} & \textbf{Example} \\
+\midrule
+\texttt{+} & Addition & \texttt{3 + 5 = 8} \\
+\texttt{-} & Subtraction & \texttt{5 - 2 = 3} \\
+\texttt{*} & Multiplication & \texttt{3 * 4 = 12} \\
+\texttt{/} & True Division & \texttt{8 / 2 = 4.0} (always float) \\
+\texttt{//} & Floor Division & \texttt{9 // 2 = 4} (quotient) \\
+\texttt{\%} & Modulus & \texttt{9 \% 2 = 1} (remainder) \\
+\texttt{**} & Exponentiation & \texttt{2 ** 10 = 1024} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{notebox}
+Python follows \textbf{BODMAS/PEMDAS}. Multiplication happens before addition. Use parentheses to override: \code{(9 + 2) * 3 = 33} vs \code{9 + 2 * 3 = 15}.
+\end{notebox}
+
+\subsection{Comparison (Relational) Operators}
+
+These always return a \code{bool} (\code{True} or \code{False}).
+
+\begin{lstlisting}
+a, b = 4, 5
+print(a > b)    # False
+print(a < b)    # True
+print(a >= b)   # False
+print(a <= b)   # False
+print(a == b)   # False  -- double equals for comparison
+print(a != b)   # True
+\end{lstlisting}
+
+\begin{dangerbox}
+\code{=} is \textit{assignment}. \code{==} is \textit{comparison}. Confusing them is the most common beginner error.
+\end{dangerbox}
+
+\subsection{Logical Operators -- Truth Table}
+
+\begin{center}
+\begin{tabular}{ccccc}
+\toprule
+\textbf{C1} & \textbf{C2} & \textbf{C1 and C2} & \textbf{C1 or C2} & \textbf{not C1} \\
+\midrule
+True & True & True & True & False \\
+True & False & \textbf{False} & True & False \\
+False & True & \textbf{False} & True & True \\
+False & False & \textbf{False} & \textbf{False} & True \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{lstlisting}
+a, b = 4, 5
+print(a < 10 and b > 1)    # True AND True  -> True
+print(a < 10 and b > 10)   # True AND False -> False (and needs both)
+print(a < 10 or  b > 10)   # True OR  False -> True  (or needs just one)
+print(not (a == b))         # not False -> True
+\end{lstlisting}
+
+\subsection{Assignment Shorthand}
+
+\begin{lstlisting}
+a = 5
+a += 2   # a = a + 2  ->  7
+a -= 1   # a = a - 1  ->  6
+a *= 3   # a = a * 3  ->  18
+a //= 4  # a = a // 4 ->  4
+a **= 2  # a = a ** 2 ->  16
+a %= 5   # a = a % 5  ->  1
+\end{lstlisting}
+
+% -----------------------------------------------------------------------------
+\section{Control Flow}
+% -----------------------------------------------------------------------------
+
+\subsection{if / elif / else}
+
+Python uses \textbf{indentation} (not curly braces) to define blocks. This enforces readable code.
+
+\begin{lstlisting}
+num = int(input("Enter a number: "))
+
+if num % 2 == 0:
+    print("Even")
+elif num % 2 != 0:
+    print("Odd")
+else:
+    print("This won't run")   # redundant here but shows else syntax
+\end{lstlisting}
+
+\begin{tipbox}
+The \code{else} in an if/elif chain is optional. \code{elif} can appear as many times as needed. There can only be one \code{else}. As soon as a condition is \code{True}, the rest are skipped.
+\end{tipbox}
+
+\subsubsection{Nested if}
+
+\begin{lstlisting}
+num = int(input("Enter a number: "))
+salary = int(input("Enter salary: "))
+
+if num % 2 == 0:
+    print("Even number")
+    if salary >= 5:
+        print("Great job!")
+    else:
+        print("Better luck next time.")
+else:
+    print("Odd number")
+\end{lstlisting}
+
+\subsection{match Statement (Python 3.10+)}
+
+A cleaner alternative to long \code{elif} chains when matching specific values:
+
+\begin{lstlisting}
+num = 3
+
+match num:
+    case 1: print("One")
+    case 2: print("Two")
+    case 3: print("Three")
+    case 4: print("Four")
+    case 5: print("Five")
+    case _: print("Number out of range")   # _ is the default/wildcard
+\end{lstlisting}
+
+\begin{notebox}
+Unlike C's \texttt{switch}, Python's \texttt{match} does NOT fall through. No \code{break} needed. The \code{\_} case is the default -- like \code{else}.
+\end{notebox}
+
+\subsection{while Loop}
+
+Repeats a block as long as a condition is \code{True}.
+
+\begin{lstlisting}
+i = 1
+while i <= 5:
+    print(f"Hello world {i}")
+    i += 1           # CRITICAL: without this, infinite loop!
+print(f"Final value of i: {i}")   # 6  (exits when i=6 fails the check)
+\end{lstlisting}
+
+\subsubsection{Nested while -- ``Hour and Day'' Analogy}
+
+\begin{lstlisting}
+i = 1
+while i <= 3:          # outer loop (days)
+    j = 1              # reset j for every outer iteration (day resets hours)
+    while j <= 4:      # inner loop (hours)
+        print("Telusko " * 1, end="")
+        print("rocks " * 1, end="")
+        j += 1
+    print()            # newline after each outer iteration
+    i += 1
+\end{lstlisting}
+
+\begin{dangerbox}
+\textbf{Infinite loop trap:} If you forget to initialize \code{j} inside the outer loop, after the first outer iteration \code{j} stays at 5, and the inner loop never executes again.
+\end{dangerbox}
+
+\subsection{for Loop}
+
+The \code{for} loop iterates over any \textbf{iterable} (list, tuple, string, range, dict, etc.).
+
+\begin{lstlisting}
+# Over a list
+data = [2, "Naven", 4.5, 8, "Telusko", "Python"]
+for value in data:
+    print(value)
+
+# Over a range
+for i in range(10):          # 0, 1, 2, ..., 9
+    print(i)
+
+for i in range(2, 11, 2):   # even numbers: 2, 4, 6, 8, 10
+    print(i)
+
+# Over dict (keys by default)
+for key in phone_book:
+    print(key, "->", phone_book[key])
+
+# Over string (character by character)
+for ch in "Python":
+    print(ch)
+\end{lstlisting}
+
+\subsection{break and continue}
+
+\begin{lstlisting}
+# continue -- skip current iteration
+for i in range(10):
+    if i % 3 == 0:
+        continue       # skip multiples of 3
+    print(i)           # prints 1, 2, 4, 5, 7, 8
+
+# break -- exit loop entirely
+for i in range(10):
+    if i == 5:
+        break          # stop at 5
+    print(i)           # prints 0, 1, 2, 3, 4
+
+print("bye")           # always prints (outside loop)
+\end{lstlisting}
+
+\begin{tipbox}
+\textbf{for...else and while...else:} Python has an optional \code{else} clause on loops. The \code{else} block runs if the loop completed \textit{without} hitting a \code{break}.
+\end{tipbox}
+
+% -----------------------------------------------------------------------------
+\section{Functions}
+% -----------------------------------------------------------------------------
+
+\subsection{Why Functions?}
+
+Functions let you \textbf{write code once, call it many times}. They also give a name to a block of logic, making code readable. Python's built-ins like \code{print()}, \code{len()}, \code{int()} are all functions defined elsewhere.
+
+\begin{lstlisting}
+# Without function -- repetitive
+a, b = 4, 5
+c = a + b
+print(c)
+# ... 50 lines later, same logic again
+a, b = 10, 20
+c = a + b
+print(c)
+
+# With function -- DRY (Don't Repeat Yourself)
+def add(x, y):
+    """Adds two values and returns the result."""
+    return x + y
+
+result = add(4, 5)
+print(result)        # 9
+result = add(10, 20)
+print(result)        # 30
+\end{lstlisting}
+
+\begin{notebox}
+The triple-quoted string immediately after \code{def} is a \textbf{docstring}. It documents what the function does. Access it with \code{add.\_\_doc\_\_} or hover in your IDE.
+\end{notebox}
+
+\subsection{Parameters and Arguments}
+
+\subsubsection{Default Arguments}
+
+\begin{lstlisting}
+def greet(name, greeting="Hello"):
+    print(f"{greeting}, {name}!")
+
+greet("Naven")              # Hello, Naven!   (uses default)
+greet("Naven", "Namaste")   # Namaste, Naven!  (overrides default)
+\end{lstlisting}
+
+\subsubsection{Keyword Arguments}
+
+When calling a function, you can specify arguments by name -- order doesn't matter.
+
+\begin{lstlisting}
+def person(name, age=18):
+    print(f"Name: {name}, Age: {age}")
+
+person(age=30, name="Naven")  # keyword args -- order flexible
+\end{lstlisting}
+
+\subsubsection{Variable-Length Positional Arguments (*args)}
+
+\begin{lstlisting}
+def add(first, *rest):
+    """first is a regular arg. rest is a tuple of extra args."""
+    total = first
+    for n in rest:
+        total += n
+    return total
+
+print(add(4, 5, 6, 7))   # 22  -- works for any number of extra args
+\end{lstlisting}
+
+\subsubsection{Variable-Length Keyword Arguments (**kwargs)}
+
+\begin{lstlisting}
+def person(name, **extra_info):
+    """extra_info is a dict of any keyword args passed."""
+    print(f"Name: {name}")
+    for key, val in extra_info.items():
+        print(f"  {key}: {val}")
+
+person("Naven", age=30, location="Pune", tech="Python")
+# Name: Naven
+#   age: 30
+#   location: Pune
+#   tech: Python
+\end{lstlisting}
+
+\subsection{Return Values and None}
+
+\begin{lstlisting}
+def add(a, b):
+    return a + b          # explicit return value
+
+def greet(name):
+    print(f"Hello {name}")  # no return -- implicitly returns None
+
+result = greet("Naven")
+print(result)              # None
+
+# Functions can return multiple values (as a tuple)
+def divmod_manual(a, b):
+    return a // b, a % b   # quotient and remainder
+
+q, r = divmod_manual(9, 2)
+print(q, r)   # 4  1
+\end{lstlisting}
+
+\subsection{Scope: Global vs Local Variables}
+
+\begin{lstlisting}
+a = 10   # global variable
+
+def something():
+    a = 15   # This creates a NEW local variable 'a' -- does NOT change global!
+    print(f"Inside function: {a}")   # 15
+
+something()
+print(f"Outside function: {a}")   # 10 -- global unchanged
+
+# To modify the global variable inside a function:
+def change_global():
+    global a
+    a = 20   # Now this modifies the global 'a'
+
+change_global()
+print(a)   # 20
+
+# globals() -- returns a dict of all current global variables
+print(globals()['a'])   # 20
+\end{lstlisting}
+
+\begin{warnbox}
+Using \code{global} is generally considered bad practice in large codebases. Prefer passing values as arguments and returning them. Reserve \code{global} for truly necessary cases.
+\end{warnbox}
+
+% -----------------------------------------------------------------------------
+\section{Functional Programming Tools}
+% -----------------------------------------------------------------------------
+
+\subsection{Functions as First-Class Objects}
+
+In Python, functions are objects. They can be:
+\begin{itemize}
+  \item Assigned to variables
+  \item Passed as arguments to other functions
+  \item Returned from functions
+  \item Stored in lists/dicts
+\end{itemize}
+
+This is the foundation of functional programming in Python.
+
+\subsection{Lambda (Anonymous Functions)}
+
+A \code{lambda} is a one-liner function -- no name, no \code{def}, no \code{return} statement needed.
+
+\begin{lstlisting}
+# Regular function
+def square(n): return n * n
+
+# Lambda equivalent
+square = lambda n: n * n
+
+# Multi-parameter lambda
+add = lambda a, b: a + b
+print(add(3, 4))   # 7
+
+# Used directly in expressions
+print((lambda x: x ** 2)(5))   # 25
+\end{lstlisting}
+
+\begin{tipbox}
+Use lambdas for short, one-off functions, especially inside \code{map()}, \code{filter()}, \code{reduce()}, or when passing a function to another function.
+\end{tipbox}
+
+\subsection{map, filter, reduce}
+
+\begin{lstlisting}
+from functools import reduce
+
+nums = [4, 2, 9, 7, 6, 8, 3, 1]
+
+# filter -- keep elements where function returns True
+evens = list(filter(lambda n: n % 2 == 0, nums))
+print(evens)   # [4, 2, 6, 8]
+
+# map -- transform each element
+doubles = list(map(lambda n: n * 2, evens))
+print(doubles)   # [8, 4, 12, 16]
+
+# reduce -- fold all elements into one value
+total = reduce(lambda a, b: a + b, doubles)
+print(total)   # 40
+
+# Combining in one pipeline:
+result = reduce(
+    lambda a, b: a + b,
+    map(lambda n: n * 2,
+        filter(lambda n: n % 2 == 0, nums))
+)
+print(result)   # 40
+\end{lstlisting}
+
+\subsection{Higher-Order Functions}
+
+A function that \textbf{takes or returns another function} is called a higher-order function.
+
+\begin{lstlisting}
+def square(n):  return n * n
+def cube(n):    return n * n * n
+
+def operate(nums, operation):
+    """Higher-order function -- accepts any single-arg function."""
+    for n in nums:
+        result = operation(n)
+        print(f"{operation.__name__}({n}) = {result}")
+
+operate([5, 6, 7], square)
+operate([5, 6, 7], cube)
+operate([5, 6, 7], lambda n: n + 100)   # anonymous inline
+\end{lstlisting}
+
+\subsection{Inner Functions and Closures}
+
+\begin{lstlisting}
+def outer():
+    def inner(x):
+        print(f"Inner says: {x}")
+    inner(42)          # can call inner from within outer
+    return inner       # return the function OBJECT (not call it)
+
+fn = outer()   # fn is now the inner function
+fn(99)         # calls inner(99) -- Inner says: 99
+
+# Closure -- inner function captures outer scope
+def counter_factory(start):
+    count = start
+    def increment():
+        nonlocal count   # nonlocal lets inner modify outer's var
+        count += 1
+        return count
+    return increment
+
+counter = counter_factory(10)
+print(counter())   # 11
+print(counter())   # 12
+print(counter())   # 13
+\end{lstlisting}
+
+\subsection{Decorators}
+
+A decorator is a function that \textbf{wraps another function} to add behavior before/after it, without modifying the original function.
+
+\begin{lstlisting}
+def log_deco(func):
+    """Decorator that logs function calls."""
+    def wrap(*args, **kwargs):
+        print(f"Calling '{func.__name__}' with args={args}")
+        result = func(*args, **kwargs)
+        print(f"Result: {result}")
+        return result
+    return wrap
+
+@log_deco          # Syntactic sugar: divide = log_deco(divide)
+def divide(a, b):
+    return a / b
+
+divide(10, 2)
+# Calling 'divide' with args=(10, 2)
+# Result: 5.0
+\end{lstlisting}
+
+\begin{lstlisting}
+# Decorator that enforces "greater number first" behavior
+def greater_first(func):
+    def wrap(a, b):
+        if a < b:
+            a, b = b, a     # swap so larger is always first
+        return func(a, b)
+    return wrap
+
+@greater_first
+def divide(a, b):
+    return a / b
+
+@greater_first
+def subtract(a, b):
+    return a - b
+
+print(divide(2, 8))    # 8/2 = 4.0  (not 2/8!)
+print(subtract(3, 9))  # 9-3 = 6
+\end{lstlisting}
+
+\begin{notebox}
+\textbf{Why decorators matter in real projects:} Frameworks like Flask/Django use decorators heavily -- \code{@app.route('/home')} tells Flask which function handles the \code{/home} URL. \code{@login\_required} protects routes. You write the logic; the decorator adds infrastructure.
+\end{notebox}
+
+% -----------------------------------------------------------------------------
+\section{Modules, Packages \& \texttt{\_\_name\_\_}}
+% -----------------------------------------------------------------------------
+
+\subsection{Modules}
+
+A \textbf{module} is any \code{.py} file. When it contains only function/class definitions (no top-level execution), it acts as a library for other files.
+
+\begin{lstlisting}
+# calc.py (a module)
+def add(a, b):
+    return a + b
+
+def subtract(a, b):
+    return a - b
+\end{lstlisting}
+
+\begin{lstlisting}
+# demo.py (uses the module)
+import calc                      # import whole module
+print(calc.add(3, 4))            # 7 -- must prefix with module name
+
+from calc import add             # import specific function
+print(add(3, 4))                 # 7 -- no prefix needed
+
+from calc import add, subtract   # import multiple
+from calc import *               # import everything (avoid -- pollutes namespace)
+import calc as c                 # alias
+print(c.add(3, 4))
+\end{lstlisting}
+
+\subsection{Packages}
+
+A \textbf{package} is a folder of modules. Group related modules into packages.
+
+\begin{verbatim}
+my_project/
+  calculator/          <- package (folder)
+    calc.py            <- module
+    demo.py            <- module
+  main.py              <- entry point
+\end{verbatim}
+
+\begin{lstlisting}
+# main.py -- accessing from outside the package
+from calculator import calc     # or
+from calculator.calc import add
+\end{lstlisting}
+
+\subsection{The \texttt{\_\_name\_\_} Variable}
+
+\begin{lstlisting}
+# When you RUN a file directly:    __name__ == '__main__'
+# When a file is IMPORTED:         __name__ == 'module_name'
+
+# calc.py
+def add(a, b):
+    return a + b
+
+if __name__ == '__main__':
+    # This block only runs when calc.py is run directly
+    # NOT when calc.py is imported by demo.py
+    print(add(2, 3))   # test code
+\end{lstlisting}
+
+\begin{tipbox}
+Always put test/demo code inside \code{if \_\_name\_\_ == '\_\_main\_\_':}. This way, your file works both as a module (importable) and as a standalone script.
+\end{tipbox}
+
+\subsection{The \texttt{math} Module -- Example}
+
+\begin{lstlisting}
+import math
+
+print(math.sqrt(25))     # 5.0
+print(math.ceil(59.4))   # 60  (ceiling -- always rounds UP)
+print(math.floor(59.9))  # 59  (floor  -- always rounds DOWN)
+print(math.pow(5, 3))    # 125.0 (5 to the power 3)
+print(math.pi)           # 3.141592653589793
+
+# help(math) or help(math.sqrt) shows docstrings in REPL
+\end{lstlisting}
+
+% -----------------------------------------------------------------------------
+\section{Object-Oriented Programming (OOP)}
+% -----------------------------------------------------------------------------
+
+\subsection{The OOP Mindset}
+
+OOP models software around \textbf{objects} rather than functions. Every real-world thing has:
+\begin{itemize}
+  \item \textbf{Properties} (what it \textit{knows}) -- stored as variables
+  \item \textbf{Behaviour} (what it \textit{does}) -- stored as methods (functions inside class)
+\end{itemize}
+
+\textbf{Class = Blueprint.} \textbf{Object = Instance} created from that blueprint.
+
+One blueprint -> many objects, just as one building plan -> many identical buildings.
+
+\subsection{Defining a Class and Creating Objects}
+
+\begin{lstlisting}
+class Computer:
+    brand = "Telusko"       # CLASS VARIABLE -- shared by all instances
+
+    def __init__(self, cpu, ram, ssd):
+        # INSTANCE VARIABLES -- unique per object
+        self.cpu = cpu
+        self.ram = ram
+        self.ssd = ssd
+
+    def config(self):
+        """Print configuration of this computer."""
+        print(f"Config: {self.cpu}, {self.ram} RAM, {self.ssd} SSD")
+
+# Create objects (instances)
+comp1 = Computer("i5",  "16GB", "512GB")
+comp2 = Computer("i9",  "96GB", "2TB")
+
+comp1.config()   # Config: i5,  16GB RAM, 512GB SSD
+comp2.config()   # Config: i9,  96GB RAM,   2TB SSD
+
+# Class variable accessed via class name or instance
+print(Computer.brand)   # Telusko
+print(comp1.brand)      # Telusko
+\end{lstlisting}
+
+\subsubsection{What is \texttt{self}?}
+
+\code{self} is the first parameter of every instance method. It is a reference to \textit{the object calling the method}. Python passes it automatically -- you never pass \code{self} explicitly when calling.
+
+\begin{lstlisting}
+comp1.config()
+# Python internally translates this to:
+Computer.config(comp1)   # comp1 becomes 'self' inside the method
+\end{lstlisting}
+
+You can name it anything, but \code{self} is universally agreed upon. Use it.
+
+\subsubsection{Three Types of Methods}
+
+\begin{lstlisting}
+class Computer:
+    brand = "Telusko"
+
+    def __init__(self, cpu, ram):
+        self.cpu = cpu
+        self.ram = ram
+
+    # 1. Instance method -- works with instance variables via self
+    def config(self):
+        print(f"{self.cpu}, {self.ram}")
+
+    # 2. Class method -- works with class variables via cls
+    @classmethod
+    def info(cls):
+        print(f"Brand: {cls.brand}")
+
+    # 3. Static method -- utility method, no self or cls
+    @staticmethod
+    def gb_to_bytes(gb):
+        return gb * (1024 ** 3)
+
+c = Computer("i7", "32GB")
+c.config()               # instance method
+Computer.info()          # class method
+Computer.gb_to_bytes(16) # static method
+\end{lstlisting}
+
+\subsubsection{Constructor vs \texttt{\_\_init\_\_}}
+
+\begin{lstlisting}
+# __new__ is the true constructor -- creates the object
+# __init__ is the initializer -- sets up the object's state
+# Python calls __new__ then __init__ for every `ClassName()` call.
+# You almost never need to define __new__ unless implementing singletons.
+
+class A:
+    def __new__(cls):
+        print("Constructor called -- object being created")
+        return super().__new__(cls)   # must return the object
+
+    def __init__(self):
+        print("Initializer called -- setting up state")
+
+a = A()
+# Constructor called -- object being created
+# Initializer called -- setting up state
+\end{lstlisting}
+
+\subsection{Inheritance}
+
+Inheritance lets one class \textbf{reuse} the variables and methods of another.
+
+\begin{lstlisting}
+class A:
+    def feature1(self):  print("F1 works")
+    def feature2(self):  print("F2 works")
+
+class B(A):         # B inherits from A -- single inheritance
+    def feature3(self):  print("F3 works")
+    def feature4(self):  print("F4 works")
+
+class C(B):         # C inherits from B which inherits from A -- multi-level
+    def feature5(self):  print("F5 works")
+
+obj = C()
+obj.feature1()  # C -> B -> A -- found in A
+obj.feature5()  # found in C itself
+\end{lstlisting}
+
+\subsubsection{Multiple Inheritance}
+
+\begin{lstlisting}
+class A:
+    def show(self): print("in A show")
+
+class B:
+    def show(self): print("in B show")
+
+class C(A, B):    # inherits from both A and B
+    pass
+
+c = C()
+c.show()   # "in A show" -- MRO: C -> A -> B (left to right)
+
+# To explicitly call B's show:
+B.show(c)   # "in B show"
+\end{lstlisting}
+
+\subsubsection{Method Resolution Order (MRO)}
+
+\begin{lstlisting}
+print(C.__mro__)
+# (<class 'C'>, <class 'A'>, <class 'B'>, <class 'object'>)
+# Python searches left to right, then 'object' (root of all classes)
+\end{lstlisting}
+
+\subsubsection{\texttt{super()} and \texttt{\_\_init\_\_} Chains}
+
+\begin{lstlisting}
+class A:
+    def __init__(self):
+        print("A init")
+    def feature1(self): print("F1 works")
+
+class B(A):
+    def __init__(self):
+        super().__init__()   # call A's __init__
+        print("B init")
+    def feature3(self): print("F3 works")
+
+obj = B()
+# A init
+# B init
+
+obj.feature1()  # from A (inherited)
+obj.feature3()  # from B
+\end{lstlisting}
+
+\subsection{Polymorphism}
+
+``One interface, many forms.'' The same operation behaves differently depending on the object.
+
+\subsubsection{Duck Typing}
+
+\begin{lstlisting}
+class Laptop:
+    def build(self):
+        print("Laptop builds")
+
+class Desktop:
+    def build(self):
+        print("Desktop builds")
+
+class Tablet:
+    def open_pdf(self):       # NO build() method!
+        print("Tablet opens PDF")
+
+def developer_works(machine):
+    machine.build()           # just needs a .build() method
+
+developer_works(Laptop())     # works
+developer_works(Desktop())    # works -- different class, same interface
+developer_works(Tablet())     # AttributeError -- no .build()!
+\end{lstlisting}
+
+\begin{notebox}
+\textbf{Duck typing:} ``If it quacks like a duck, it is a duck.'' Python doesn't check the type -- it just calls the method. If the method exists, it works.
+\end{notebox}
+
+\subsubsection{Operator Overloading}
+
+You can define what \code{+}, \code{>}, \code{str()} etc. mean for your custom class by implementing dunder (magic) methods.
+
+\begin{lstlisting}
+class Account:
+    def __init__(self, name, balance):
+        self.name    = name
+        self.balance = balance
+
+    def __str__(self):
+        """Called by print() / str()."""
+        return f"{self.name}: {self.balance}"
+
+    def __add__(self, other):
+        """Defines what '+' means for two Account objects."""
+        return Account("Combined", self.balance + other.balance)
+
+    def __gt__(self, other):
+        """Defines what '>' means."""
+        return self.balance > other.balance
+
+u1 = Account("Naven", 1000)
+u2 = Account("Kiran", 2000)
+
+print(u1)            # Naven: 1000  (uses __str__)
+combined = u1 + u2   # uses __add__
+print(combined)      # Combined: 3000
+print(u1 > u2)       # False  (1000 > 2000)  (uses __gt__)
+\end{lstlisting}
+
+\subsubsection{Method Overriding}
+
+When a child class redefines a parent method with the same name, the child's version is used.
+
+\begin{lstlisting}
+class A:
+    def show(self): print("in A show")
+
+class B(A):
+    def show(self): print("in B show")   # OVERRIDES A's show
+
+b = B()
+b.show()   # "in B show" -- child's version wins
+\end{lstlisting}
+
+\subsection{Abstraction}
+
+Abstraction means \textbf{hiding implementation details} and exposing only what's necessary. In Python, this is achieved through abstract classes (ABC).
+
+\begin{lstlisting}
+from abc import ABC, abstractmethod
+
+class PaymentGateway(ABC):
+    """Interface -- defines what every gateway MUST have."""
+
+    @abstractmethod
+    def pay(self, amount):
+        pass   # no implementation -- just the contract
+
+class RazorPay(PaymentGateway):
+    def pay(self, amount):
+        print(f"Paying Rs. {amount} via RazorPay")
+
+class Telusko Pay(PaymentGateway):
+    def pay(self, amount):
+        print(f"Paying Rs. {amount} via TeluskoP ay")
+
+# Can NOT instantiate abstract class:
+# gw = PaymentGateway()  -> TypeError: Can't instantiate abstract class
+
+rp = RazorPay()
+rp.pay(500)   # Paying Rs. 500 via RazorPay
+\end{lstlisting}
+
+\begin{tipbox}
+\textbf{Real-world use:} Your \code{checkout} page depends on \code{PaymentGateway}, not \code{RazorPay} specifically. Switch to a different gateway by just passing a different object -- no changes to checkout code. This is \textbf{loosely coupled design}.
+\end{tipbox}
+
+% -----------------------------------------------------------------------------
+\section{Recursion}
+% -----------------------------------------------------------------------------
+
+\subsection{What is Recursion?}
+
+A function calling itself. Every recursion needs:
+\begin{enumerate}
+  \item A \textbf{base case} -- the stopping condition (or it runs forever)
+  \item A \textbf{recursive case} -- reducing the problem toward the base case
+\end{enumerate}
+
+\begin{lstlisting}
+# Factorial: n! = n * (n-1) * ... * 1
+def factorial(n):
+    if n == 1:           # base case
+        return 1
+    return n * factorial(n - 1)   # recursive call
+
+print(factorial(5))  # 120
+# Call stack: factorial(5) -> 5 * factorial(4)
+#             factorial(4) -> 4 * factorial(3)  ... -> factorial(1) = 1
+# Unwinds:    1 -> 2 -> 6 -> 24 -> 120
+\end{lstlisting}
+
+\begin{lstlisting}
+import sys
+
+# Default recursion limit
+print(sys.getrecursionlimit())   # 1000
+
+# Change it (use carefully)
+sys.setrecursionlimit(3000)
+\end{lstlisting}
+
+\begin{dangerbox}
+Each recursive call adds a frame to the call stack. Too many recursive calls -> \textbf{RecursionError: maximum recursion depth exceeded}. For large inputs, prefer an iterative solution.
+\end{dangerbox}
+
+% -----------------------------------------------------------------------------
+\section{Exception Handling}
+% -----------------------------------------------------------------------------
+
+\subsection{Types of Errors}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Type} & \textbf{When} & \textbf{Example} \\
+\midrule
+Syntax Error & At parse time & \texttt{deff foo():} \\
+Logical Error & Wrong output, no crash & Returning 2 instead of 1 in recursion base \\
+Runtime Error / Exception & At runtime, unexpected input/state & Divide by zero \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Exception Hierarchy}
+
+\begin{verbatim}
+BaseException
+  +-- Exception
+        +-- ArithmeticError
+        |     +-- ZeroDivisionError
+        +-- ValueError
+        +-- TypeError
+        +-- FileNotFoundError
+        +-- IndexError
+        +-- KeyError
+        +-- RecursionError
+        +-- ... (many more)
+\end{verbatim}
+
+\subsection{try / except / else / finally}
+
+\begin{lstlisting}
+a = int(input("Numerator: "))
+b = int(input("Denominator: "))
+
+try:
+    result = a / b
+    print(f"Result: {result}")
+except ZeroDivisionError as e:
+    print(f"Error: Cannot divide by zero. ({e})")
+except ValueError as e:
+    print(f"Error: Invalid input -- please enter numbers only. ({e})")
+except Exception as e:
+    print(f"Unexpected error: {e}")
+else:
+    print("Calculation successful!")  # runs only if NO exception
+finally:
+    print("End of execution.")   # ALWAYS runs -- clean up resources here
+\end{lstlisting}
+
+\begin{notebox}
+\textbf{The \texttt{finally} block:} Always executes, whether or not an exception occurred. Perfect for closing files, database connections, or network sockets -- you must close resources even if your code crashes.
+\end{notebox}
+
+\subsection{Raising Exceptions Manually}
+
+\begin{lstlisting}
+def set_age(age):
+    if age < 0 or age > 150:
+        raise ValueError(f"Invalid age: {age}. Must be 0-150.")
+    return age
+
+try:
+    set_age(-5)
+except ValueError as e:
+    print(e)   # Invalid age: -5. Must be 0-150.
+\end{lstlisting}
+
+% -----------------------------------------------------------------------------
+\section{Concurrency: Threads \& Multiprocessing}
+% -----------------------------------------------------------------------------
+
+\subsection{Why Concurrency?}
+
+Modern applications do many things at once: download files, play music, update UI, respond to user clicks. Without concurrency, each task would block the others.
+
+\begin{itemize}
+  \item \textbf{Thread:} Lightweight unit of execution. Multiple threads share the same process memory.
+  \item \textbf{Process:} Heavier. Has its own memory space and Python interpreter (own GIL).
+\end{itemize}
+
+\subsection{Threads with \texttt{threading} Module}
+
+\begin{lstlisting}
+import threading
+import time
+
+def download(filename):
+    print(f"Downloading {filename}...")
+    time.sleep(0.5)   # simulate download time
+    print(f"Downloaded {filename}!")
+
+files = ["video.mp4", "image.png", "data.csv"]
+
+# Serial (no threads)
+start = time.time()
+for f in files:
+    download(f)
+print(f"Serial: {time.time() - start:.2f}s")  # ~1.5s
+
+# Parallel (with threads)
+threads = []
+start = time.time()
+for f in files:
+    t = threading.Thread(target=download, args=(f,))
+    threads.append(t)
+    t.start()           # LAUNCH each thread
+
+for t in threads:
+    t.join()            # WAIT for all threads to finish
+
+print(f"Parallel: {time.time() - start:.2f}s")  # ~0.5s
+\end{lstlisting}
+
+\begin{lstlisting}
+# Class-based approach (inheriting Thread)
+class Hello(threading.Thread):
+    def run(self):           # must be named 'run'
+        for i in range(5):
+            print(f"Hello {i+1}")
+
+class Hi(threading.Thread):
+    def run(self):
+        for i in range(5):
+            print(f"Hi {i+1}")
+
+t1, t2 = Hello(), Hi()
+t1.start()
+t2.start()
+t1.join()
+t2.join()
+print("bye")
+\end{lstlisting}
+
+\subsection{The GIL Problem}
+
+Python's \textbf{Global Interpreter Lock (GIL)} allows only one thread to execute Python bytecode at a time. This means:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Task Type} & \textbf{Threads help?} & \textbf{Why} \\
+\midrule
+I/O-bound (file, network) & \textbf{Yes} & GIL released during I/O waits \\
+CPU-bound (heavy math) & \textbf{No} & GIL prevents parallel CPU use \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Multiprocessing for CPU-bound Tasks}
+
+\begin{lstlisting}
+from multiprocessing import Process
+import time
+
+def calculate(n1, n2):
+    total = sum(i ** 2 for i in range(n1, n2))
+
+num = 50_000_000
+mid = num // 2
+
+# Each process has its OWN GIL -- true parallelism
+p1 = Process(target=calculate, args=(0, mid))
+p2 = Process(target=calculate, args=(mid, num))
+
+start = time.time()
+p1.start(); p2.start()
+p1.join();  p2.join()
+print(f"Multiprocessing: {time.time() - start:.2f}s")
+# Noticeably faster than serial for CPU-bound work
+\end{lstlisting}
+
+\begin{tipbox}
+Use \code{threading} for I/O-bound tasks. Use \code{multiprocessing} for CPU-bound tasks. For truly async I/O at scale (web servers), look into \code{asyncio}.
+\end{tipbox}
+
+% -----------------------------------------------------------------------------
+\section{Arrays (\texttt{array} module)}
+% -----------------------------------------------------------------------------
+
+\begin{lstlisting}
+from array import array
+
+# array(typecode, [values]) -- homogeneous typed array
+arr = array('i', [10, 20, 30, 40, 50])   # 'i' = signed int
+
+print(arr)         # array('i', [10, 20, 30, 40, 50])
+print(list(arr))   # [10, 20, 30, 40, 50]  -- convert to list to print cleanly
+
+# Operations
+arr.append(60)             # add at end
+arr.insert(1, 15)          # insert 15 at index 1
+arr.remove(30)             # remove first occurrence of 30
+val = arr.pop()            # pop last element
+print(arr.typecode)        # 'i'
+print(arr.buffer_info())   # (address, length)
+
+# Copy an array efficiently (generator expression)
+arr2 = array(arr.typecode, (n for n in arr))
+
+# Iterate
+for n in arr:
+    print(n)
+\end{lstlisting}
+
+\begin{notebox}
+\textbf{array vs list:} Arrays require all elements to be the same type -- faster for numeric operations and uses less memory. For complex array work (2D arrays, matrix ops), use NumPy instead.
+\end{notebox}
+
+% -----------------------------------------------------------------------------
+\section{Quick Reference -- Patterns \& Idioms}
+% -----------------------------------------------------------------------------
+
+\subsection{List Comprehensions}
+
+\begin{lstlisting}
+# [expression for item in iterable if condition]
+squares = [x**2 for x in range(10)]
+evens   = [x for x in range(20) if x % 2 == 0]
+matrix  = [[i*j for j in range(1,4)] for i in range(1,4)]
+\end{lstlisting}
+
+\subsection{Dictionary / Set Comprehensions}
+
+\begin{lstlisting}
+word_lengths = {word: len(word) for word in ["hello", "world", "python"]}
+# {'hello': 5, 'world': 5, 'python': 6}
+
+unique_squares = {x**2 for x in range(-5, 6)}
+# {0, 1, 4, 9, 16, 25}
+\end{lstlisting}
+
+\subsection{enumerate \& zip}
+
+\begin{lstlisting}
+names = ["Naven", "Kiran", "Hush"]
+
+for i, name in enumerate(names, start=1):
+    print(f"{i}. {name}")   # 1. Naven, 2. Kiran, 3. Hush
+
+scores = [95, 87, 72]
+for name, score in zip(names, scores):
+    print(f"{name}: {score}")
+\end{lstlisting}
+
+\subsection{Walrus Operator \texttt{:=} (Python 3.8+)}
+
+\begin{lstlisting}
+import re
+data = "Hello 42 World"
+
+if m := re.search(r'\d+', data):
+    print(f"Found number: {m.group()}")   # Found number: 42
+\end{lstlisting}
+
+\subsection{Context Managers (\texttt{with})}
+
+\begin{lstlisting}
+# Automatically closes the file even if an exception occurs
+with open("data.txt", "r") as f:
+    content = f.read()
+# file is closed here -- no need for explicit f.close()
+\end{lstlisting}
+
+\subsection{Unpacking \& Starred Assignment}
+
+\begin{lstlisting}
+first, *middle, last = [1, 2, 3, 4, 5]
+print(first)    # 1
+print(middle)   # [2, 3, 4]
+print(last)     # 5
+\end{lstlisting}
+
+% -----------------------------------------------------------------------------
+\section{Complete OOP Example -- Putting It All Together}
+% -----------------------------------------------------------------------------
+
+\begin{lstlisting}
+from abc import ABC, abstractmethod
+
+# ----------- ABSTRACT BASE CLASS (Interface) -----------
+class Shape(ABC):
+    @abstractmethod
+    def area(self): pass
+
+    @abstractmethod
+    def perimeter(self): pass
+
+    def __str__(self):
+        return f"{self.__class__.__name__}: area={self.area():.2f}"
+
+# ----------- CONCRETE CLASSES (Implementations) -----------
+class Circle(Shape):
+    PI = 3.14159
+
+    def __init__(self, radius):
+        self.radius = radius
+
+    def area(self):
+        return Circle.PI * self.radius ** 2
+
+    def perimeter(self):
+        return 2 * Circle.PI * self.radius
+
+class Rectangle(Shape):
+    def __init__(self, width, height):
+        self.width  = width
+        self.height = height
+
+    def area(self):
+        return self.width * self.height
+
+    def perimeter(self):
+        return 2 * (self.width + self.height)
+
+# ----------- POLYMORPHISM IN ACTION -----------
+shapes = [Circle(5), Rectangle(4, 6), Circle(3)]
+
+for shape in shapes:
+    print(shape)              # uses __str__
+    print(f"  Perimeter: {shape.perimeter():.2f}")
+
+# All shapes respond to area() and perimeter() -- duck typing!
+total_area = sum(s.area() for s in shapes)
+print(f"Total area: {total_area:.2f}")
+\end{lstlisting}
+
+% -----------------------------------------------------------------------------
+\section{Mental Models -- Summary}
+% -----------------------------------------------------------------------------
+
+\begin{summarybox}
+\begin{itemize}
+  \item \textbf{Variables = labels, not boxes.} They point to objects. Objects have identity (\code{id}), type (\code{type}), value.
+  \item \textbf{Everything is an object.} Integers, strings, functions, classes -- all objects.
+  \item \textbf{Mutable vs Immutable.} Lists/dicts/sets are mutable. Strings/tuples/ints are immutable.
+  \item \textbf{self = current instance.} Passed automatically. Write it, don't call it.
+  \item \textbf{Inheritance chains.} MRO is left-to-right, depth-first. Use \code{super()} to call parent.
+  \item \textbf{Duck typing.} Python doesn't care about the class, only whether the method exists.
+  \item \textbf{Decorators = wrappers.} \code{@dec} above \code{def f} means \code{f = dec(f)} behind the scenes.
+  \item \textbf{GIL.} Threads for I/O. Processes for CPU. \code{asyncio} for high-concurrency I/O.
+  \item \textbf{Exceptions.} \code{try/except/finally} -- never let the app crash on predictable errors.
+  \item \textbf{Modules = .py files. Packages = folders of modules.} \code{\_\_name\_\_ == '\_\_main\_\_'} guards execution.
+\end{itemize}
+\end{summarybox}
+
+% --- Footer -------------------------------------------------------------------
+\vfill
+\begin{center}
+{\small\color{gray}\itshape Python Notes -- Intermediate-level reference. Pair with code practice for best retention.}
+\end{center}
+
+\end{document}

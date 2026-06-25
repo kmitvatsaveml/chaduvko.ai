@@ -1,0 +1,1463 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%% Optimization & Linear Algebra for Deep Learning
+%%%%%% NPTEL Course Notes (Lectures 5.1--6.6)
+%%%%%% Revised May 14 2026 — spacing fixes + handwritten-note observations
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass{beamer}
+\hypersetup{pdfpagemode=FullScreen}
+\setbeamertemplate{navigation symbols}{}
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{amsmath,amssymb}
+\usepackage[T1]{fontenc}
+\usepackage{times}
+\usepackage{mathptmx}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{mathtools}
+\usepackage{algorithm,algorithmic}
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+
+\mode<presentation>{
+  \usetheme{Madrid}
+  \usecolortheme{whale}
+}
+
+% Give frames more breathing room: reduce block title padding and use small font
+\setbeamertemplate{blocks}[rounded][shadow=false]
+\AtBeginEnvironment{block}{\small}
+\AtBeginEnvironment{alertblock}{\small}
+\AtBeginEnvironment{exampleblock}{\small}
+% Shrink all frames slightly so content fits
+\setbeamersize{text margin left=6pt, text margin right=6pt}
+
+\setbeamercovered{transparent}
+\setbeamertemplate{bibliography item}[text]
+\setbeamertemplate{theorems}[numbered]
+\setbeamerfont{title}{size=\large}
+\setbeamerfont{date}{size=\tiny}
+\setbeamertemplate{itemize items}[ball]
+\setbeamertemplate{itemize subitem}[circle]
+\setbeamertemplate{itemize subsubitem}[triangle]
+\setbeamertemplate{caption}[numbered]
+
+%------------------------------------------------------------------
+%  TITLE PAGE
+%------------------------------------------------------------------
+\title[Optimization \& Linear Algebra]{%
+  Optimization Algorithms \& Linear Algebra\\[4pt]
+  for Deep Learning}
+
+\author[Vatsav Reddy]{%
+  \texorpdfstring{%
+    {\Large Vatsav Reddy}\\[6pt]
+    {\small Under the Guidance of}\\[2pt]
+    {\small Prof.\ Praveen Parchuri}%
+  }{Vatsav Reddy}}
+
+\institute[IIITH]{%
+  {\normalsize International Institute of Information Technology, Hyderabad}}
+
+\date{\today}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}[shrink=10]{Contents}
+  \tableofcontents
+\end{frame}
+
+\AtBeginSection[]{
+  \begin{frame}<beamer>
+    \frametitle{Current Section}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
+%==================================================================
+\section{Lec 5.1 \& 5.2 Recap: Gradient Descent \& Contour Maps}
+%==================================================================
+
+\begin{frame}[shrink=10]{Gradient Descent Recap}
+  \begin{block}{Setup}
+    Prediction $\hat{y} = f(x) = \tfrac{1}{1+e^{-(w\cdot x+b)}}$,\quad
+    parameter vector $w = \{w^1, w^2, \ldots\}$,\quad
+    labels $q = \{q_1,\ldots,q_h\}$,\quad
+    $\mathcal{L}(p\|q) = \mathrm{CE}(p,q)$.
+  \end{block}
+
+  \medskip
+
+  \begin{block}{Update Rule: $w \leftarrow w - \eta\,\nabla w$}
+    \begin{itemize}\setlength\itemsep{3pt}
+      \item \textbf{Steep:}  $\frac{\Delta y_1}{\Delta x_1}$ large
+            $\Rightarrow$ updates \textbf{large} $\Rightarrow$ \textbf{Fast}
+      \item \textbf{Gentle:} $\frac{\Delta y_2}{\Delta x_2}$ small
+            $\Rightarrow$ updates \textbf{small} $\Rightarrow$ \textbf{Slow}
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Contour Maps (Lec 5.3)}
+  \begin{block}{Key Observation}
+    The error surface can be visualised in 3-D (over $w$ and $b$ axes)
+    or as 2-D contours.
+    Moving $3\text{D}\to 2\text{D}\to$ ``combination'' view aids intuition.
+  \end{block}
+
+  \begin{columns}[T]
+    \column{0.52\textwidth}
+    \begin{block}{Reading Contours}
+      \begin{itemize}\setlength\itemsep{4pt}
+        \item Ellipse/circle boundary $\Rightarrow$ \textbf{same error}
+        \item \textbf{Small} gap $\Rightarrow$ steep slope
+        \item \textbf{Large} gap $\Rightarrow$ gentle slope
+        \item Plateau $\Rightarrow$ very slow movement
+      \end{itemize}
+    \end{block}
+
+    \column{0.44\textwidth}
+    \begin{alertblock}{Key Rule (proportional to gradient)}
+      \begin{itemize}\setlength\itemsep{4pt}
+        \item Gentle $\to$ smaller gradient
+              $\to$ \textbf{slower moment}
+        \item Steep $\to$ higher gradient
+              $\to$ \textbf{higher moment}
+      \end{itemize}
+    \end{alertblock}
+  \end{columns}
+\end{frame}
+
+%==================================================================
+\section{Lec 5.4: Momentum-Based Descent}
+%==================================================================
+
+\begin{frame}[shrink=10]{Problem with Vanilla Gradient Descent}
+  \begin{alertblock}{Problem}
+    Vanilla GD takes a lot of time to navigate regions with a
+    \textbf{gentle slope} because the gradient is very small there.
+  \end{alertblock}
+
+  \bigskip
+
+  \begin{block}{Momentum GD --- Intuition}
+    \textit{``If I am repeatedly being asked to move in the same direction,
+    then I should probably gain some confidence and start taking
+    \textbf{bigger steps} in that direction.''}
+  \end{block}
+
+  \bigskip
+
+  \begin{block}{Regularisation Note}
+    \begin{itemize}\setlength\itemsep{6pt}
+      \item \textbf{L1 (Lasso):}
+            $\mathcal{L}_1 = \displaystyle\sum_{i}(y_i-\hat{y}_i)^2
+            + \lambda\sum_j|w_j|$ \quad (encourages \emph{sparsity})
+      \item \textbf{L2 (Ridge):}
+            $\mathcal{L}_2 = \displaystyle\sum_{i}(y_i-\hat{y}_i)^2
+            + \lambda\sum_j w_j^2$ \quad (\emph{non-sparse} / shrinkage)
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Momentum Update Rule}
+  \begin{block}{Update Equations}
+    \begin{align*}
+      \text{update}_t &= \beta\cdot\text{update}_{t-1}
+                        + \eta\,\nabla w_t
+                        \qquad\leftarrow\text{current gradient}\\[4pt]
+      w_{t+1}        &= w_t - \text{update}_t
+                       = w_t - \beta\,\text{update}_{t-1}
+                         - \eta\,\nabla w_t
+    \end{align*}
+    In addition to the current update we also look at the
+    \textbf{history of updates}.
+  \end{block}
+
+  \medskip
+
+  \begin{exampleblock}{Exponentially Weighted Average --- Derivation ($\text{update}_0=0$)}
+    \begin{align*}
+      \text{update}_1 &= \eta\nabla w_1\\
+      \text{update}_2 &= \beta\eta\nabla w_1 + \eta\nabla w_2\\
+      \text{update}_3 &= \beta^2\eta\nabla w_1
+                         + \beta\eta\nabla w_2 + \eta\nabla w_3\\
+      \vdots\;&
+    \end{align*}
+    \[
+      \boxed{\text{update}_t
+        = \beta^{t-1}\eta\nabla w_1 + \cdots + \eta\nabla w_t}
+    \]
+  \end{exampleblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Why Momentum Works}
+  \begin{block}{Key Insight}
+    Even in regions with \textbf{gentle slopes}, momentum-based GD can
+    take \textbf{large steps} because the accumulated momentum carries
+    it along.
+  \end{block}
+
+  \bigskip
+
+  \begin{alertblock}{Is Moving Fast Always Good?}
+    No!\ Momentum can take many \textbf{U-turns} before converging.
+    Despite these U-turns it still converges \emph{faster} than vanilla GD.
+  \end{alertblock}
+
+  \bigskip
+
+  \begin{exampleblock}{Observation from Notes}
+    The U-turns arise because momentum overshoots; the gradient
+    corrects direction repeatedly.
+    Convergence is still guaranteed and faster than plain GD.
+  \end{exampleblock}
+\end{frame}
+
+%==================================================================
+\section{Lec 5.5: Nesterov Accelerated Gradient Descent}
+%==================================================================
+
+\begin{frame}[shrink=10]{NAG: Look Before You Leap}
+  \begin{columns}[T]
+    \column{0.48\textwidth}
+    \begin{block}{Momentum (standing here)}
+      \begin{enumerate}\setlength\itemsep{4pt}
+        \item Stand here
+        \item Check slope \emph{here}
+        \item Move
+      \end{enumerate}
+      \smallskip
+      \textit{A single data point --- current position only}
+    \end{block}
+
+    \column{0.48\textwidth}
+    \begin{block}{Nesterov (standing ahead)}
+      \begin{enumerate}\setlength\itemsep{4pt}
+        \item Peek ahead
+        \item Check \textbf{future} slope
+        \item Adjust \emph{before} moving
+      \end{enumerate}
+    \end{block}
+  \end{columns}
+
+  \medskip
+
+  \begin{block}{NAG --- Key Difference \& Update Rule}
+    Compute the gradient at the \textbf{look-ahead} value of $w$:
+    \[
+      w_{\text{look-ahead}} = w_t - \beta\,\text{update}_{t-1}
+    \]
+    (Move according to history first --- you might end up before a cliff!)
+    \begin{align*}
+      \text{update}_t &= \beta\,\text{update}_{t-1}
+                        + \eta\,\nabla w_{\text{look-ahead}}\\
+      w_{t+1}        &= w_t - \text{update}_t
+    \end{align*}
+  \end{block}
+\end{frame}
+
+%==================================================================
+\section{Lec 5.6: Stochastic \& Mini-batch Gradient Descent}
+%==================================================================
+
+\begin{frame}[shrink=10]{Stochastic Gradient Descent (SGD)}
+  \begin{block}{Consequence of Full-batch GD}
+    Full-batch requires \textbf{millions of calculations} per update step
+    (one pass over all data before any parameter update).
+  \end{block}
+
+  \medskip
+
+  \begin{algorithm}[H]
+  \begin{algorithmic}[1]
+    \REQUIRE $w,\,b,\,\eta$,\;\texttt{max\_epoch}
+    \FOR{$i$ in \texttt{range(max\_epoch)}}
+      \STATE $dw,\,db \leftarrow 0,\,0$
+      \FOR{$x,\,y$ in \texttt{zip}$(X,Y)$}
+        \STATE $dw = \texttt{grad\_w}(w,b,x,y)$;\quad
+               $db = \texttt{grad\_b}(w,b,x,y)$
+        \STATE $w \leftarrow w-\eta\,dw$;\quad $b \leftarrow b-\eta\,db$
+      \ENDFOR
+    \ENDFOR
+  \end{algorithmic}
+  \caption{Stochastic Gradient Descent (update per point)}
+  \end{algorithm}
+
+  \medskip
+
+  \begin{alertblock}{Stochastic $=$ Like Tossing a Coin}
+    \begin{itemize}\setlength\itemsep{4pt}
+      \item \textbf{No theoretical guarantee} that each step decreases
+            the loss
+      \item Many \textbf{oscillations} --- greedy, per-point decisions
+      \item Each point pushes parameters in the direction most favourable
+            to \emph{it}, ignoring all other points
+      \item Data points effectively \textbf{compete} with each other
+    \end{itemize}
+  \end{alertblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Mini-batch Gradient Descent (MBGD)}
+  \begin{block}{Idea: Better Gradient Estimate}
+    SGD estimates the gradient from \textbf{1 data point} at a time.
+    MBGD averages over a \textbf{batch of $B$ points}.
+  \end{block}
+
+  \medskip
+
+  \begin{algorithm}[H]
+  \begin{algorithmic}[1]
+    \REQUIRE $w,b,\eta$;\;\texttt{min\_batch\_size} $B$
+    \FOR{$i$ in \texttt{range(max\_epoch)}}
+      \STATE $dw,db,\texttt{num\_seen} \leftarrow 0,0,0$
+      \FOR{$x,y$ in \texttt{zip}$(X,Y)$}
+        \STATE $dw \mathrel{+}= \texttt{grad\_w}(w,b,x,y)$;\;
+               $db \mathrel{+}= \texttt{grad\_b}(w,b,x,y)$
+        \STATE $\texttt{num\_seen} \mathrel{+}= 1$
+        \IF{$\texttt{num\_seen}\bmod B = 0$}
+          \STATE $w\leftarrow w-\eta\,dw$;\;
+                 $b\leftarrow b-\eta\,db$;\;
+                 $dw,db\leftarrow 0,0$
+        \ENDIF
+      \ENDFOR
+    \ENDFOR
+  \end{algorithmic}
+  \caption{Mini-batch Gradient Descent}
+  \end{algorithm}
+
+  \medskip
+
+  \begin{columns}[T]
+    \column{0.5\textwidth}
+    \begin{block}{Key Terms}
+      \begin{itemize}\setlength\itemsep{4pt}
+        \item \textbf{Epoch}: one pass over all data
+        \item \textbf{Step}: one parameter update
+        \item $N$ = data points;\quad $B$ = batch size
+      \end{itemize}
+    \end{block}
+
+    \column{0.46\textwidth}
+    \begin{block}{Steps per Epoch}
+      \centering
+      \renewcommand{\arraystretch}{1.3}
+      \begin{tabular}{lc}
+        \toprule
+        \textbf{Algorithm} & \textbf{\# steps}\\
+        \midrule
+        Vanilla / Batch GD & $1$\\
+        Stochastic GD      & $N$\\
+        Mini-Batch GD      & $N/B$\\
+        \bottomrule
+      \end{tabular}
+    \end{block}
+  \end{columns}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Why MBGD Oscillates Less}
+  \begin{exampleblock}{Coin-Toss Analogy}
+    Tossing a coin $k$ times gives a better estimate of $P(\text{heads})$
+    than a single toss.
+    \[
+      1\ \text{toss}:\ \tfrac{1}{2}\ \big|\ \tfrac{1}{2}
+      \qquad
+      k\ \text{tosses}:\ \text{know which is the better estimate}
+    \]
+    Higher $k$ $\Rightarrow$ better estimate $\Rightarrow$ fewer
+    oscillations.\\[6pt]
+    Similarly: larger mini-batch $\Rightarrow$ better gradient estimate
+    $\Rightarrow$ \textbf{MBGD oscillates less than SGD}.
+  \end{exampleblock}
+
+  \medskip
+
+  \begin{block}{Relative Oscillations (large $\to$ small)}
+    \[
+      \text{Stochastic GD} \;>\; \text{MBGD} \;>\; \text{Vanilla GD}
+    \]
+    MBGD takes relatively \emph{shorter} U-turns than pure SGD.
+  \end{block}
+\end{frame}
+
+%==================================================================
+\section{Lec 5.7: Tips for Learning Rate \& Momentum}
+%==================================================================
+
+\begin{frame}[shrink=10]{Choosing the Learning Rate}
+  \begin{alertblock}{The Dilemma}
+    Set $\eta$ high to ``blow up'' the small gradient on gentle slopes
+    $\Rightarrow$ steep regions diverge!
+  \end{alertblock}
+
+  \medskip
+
+  \begin{block}{Adaptive $\eta$ Philosophy}
+    \[
+      \text{Gentle slope} \Rightarrow \text{fast (large } \eta\text{)}
+      \qquad
+      \text{Steep slope} \Rightarrow \text{slow (small } \eta\text{)}
+    \]
+    \begin{itemize}\setlength\itemsep{5pt}
+      \item Typical values: $\eta\in\{0.0001,\;0.001,\;0.01,\;\mathbf{0.1}\}$
+      \item Fine search on \textbf{log scale}:
+            $0.05\to 0.1\to 0.2\to\cdots$
+      \item These are \textbf{heuristics} --- no single winning strategy
+      \item High $\eta$: faster convergence, risk of overshooting\\
+            Low $\eta$: slower but more precise
+    \end{itemize}
+  \end{block}
+
+  \medskip
+
+  \begin{block}{Multi-start Strategy}
+    Every time we reach a minimum, save $(w_0,b_0)$.
+    Take the minimum which is \emph{less lossy}.
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Annealing the Learning Rate}
+  \begin{block}{Step Decay}
+    \begin{itemize}\setlength\itemsep{5pt}
+      \item Halve $\eta$ after every $T$ epochs
+      \item Halve $\eta$ after an epoch if validation error
+            $>$ previous epoch's error
+      \item Save model at epoch $t$; if epoch $t{+}1$ loss $>$
+            epoch $t$ loss, restore saved model and set
+            $\eta \leftarrow \eta/2$
+    \end{itemize}
+  \end{block}
+
+  \medskip
+
+  \begin{block}{Exponential Decay}
+    \[
+      \eta = \eta_0\,e^{-kt}
+      \qquad
+      (\eta_0,\;k\ \text{are hyperparameters};\;t\ \text{is step number})
+    \]
+  \end{block}
+
+  \medskip
+
+  \begin{block}{$1/t$ Decay}
+    \[
+      \eta = \frac{\eta_0}{1+kt}
+    \]
+    \textbf{Better not to use} --- introduces an extra hyperparameter
+    ($1\tfrac{1}{2}$ more than needed).
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Tips for Momentum}
+  \begin{block}{Schedule (Sutskever et al.\ 2013)}
+    \[
+      \mu_{t+1}
+        = \min\!\left(
+            1 - 2^{-1-\log_2\!\left(\lfloor t/250\rfloor+1\right)},\;
+            \mu_{\max}
+          \right)
+    \]
+    \begin{itemize}\setlength\itemsep{5pt}
+      \item $\mu_0 = 0.5$,\quad
+            $\mu_{250} = 0.75$,\quad
+            $\mu_{750} = 0.875$
+      \item $\mu_{\max}$ chosen from
+            $\{0.999,\;0.995,\;0.99,\;0.9,\;0\}$
+    \end{itemize}
+    The number of effective updates
+    $\approx \mu_t + \dfrac{d\ell}{dw}$.
+  \end{block}
+\end{frame}
+
+%==================================================================
+\section{Lec 5.8: Line Search}
+%==================================================================
+
+\begin{frame}[shrink=10]{Line Search}
+  \begin{block}{Goal}
+    Find the best $\eta$ \emph{at each step} from a discrete set:
+    \[
+      \eta \in \{0.1,\;0.5,\;1.0,\;5.0,\;10.0\}
+    \]
+    \begin{itemize}\setlength\itemsep{5pt}
+      \item Gentle slope $\Rightarrow$ pick larger $\eta$
+      \item Steep slope  $\Rightarrow$ pick small $\eta$
+    \end{itemize}
+  \end{block}
+
+  \medskip
+
+  \begin{algorithm}[H]
+  \begin{algorithmic}[1]
+    \STATE best $w,b \leftarrow$ worst error
+    \FOR{$\eta$ in \texttt{etas}}
+      \STATE $\text{tmp}w = w - \eta\,dw$;\quad
+             $\text{tmp}b = b - \eta\,db$
+      \IF{$\texttt{error}(\text{tmp}w,\,\text{tmp}b) < \min\,\texttt{error}$}
+        \STATE best $w \leftarrow \text{tmp}w$;\quad
+               best $b \leftarrow \text{tmp}b$
+      \ENDIF
+    \ENDFOR
+  \end{algorithmic}
+  \caption{Line Search}
+  \end{algorithm}
+
+  \medskip
+
+  \begin{alertblock}{Flip Side}
+    If $k$ etas are tried: $k\times$ more computation.
+    However, it avoids getting stuck in a local minimum for a particular
+    learning rate --- with another rate we might have reached a better
+    region.
+  \end{alertblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{When Do Oscillations Happen?}
+  \begin{itemize}\setlength\itemsep{8pt}
+    \item Oscillations occur when the loss \emph{increases} from its
+          current value
+    \item Whether this happens depends on the learning rate chosen
+    \item Convergence is \textbf{faster} than vanilla GD even with
+          oscillations
+    \item The oscillations in line search differ from those in Momentum
+          and NAG --- here they arise from the discrete $\eta$ set,
+          not from gradient history
+  \end{itemize}
+\end{frame}
+
+%==================================================================
+\section{Lec 5.9: Gradient Descent with Adaptive Learning Rate}
+%==================================================================
+
+\begin{frame}[shrink=10]{Motivation: Sparse Features}
+  \begin{block}{Problem Setup}
+    \[
+      \nabla w^1 = (f(x)-y)\cdot f(x)\cdot(1-f(x))\cdot x^1
+    \]
+    If feature $x^1$ is \textbf{sparse} (mostly 0):
+    $\nabla w^1 \approx 0$ for most inputs
+    $\Rightarrow$ $w^1$ gets very few updates.
+  \end{block}
+
+  \medskip
+
+  \begin{alertblock}{Issue}
+    \begin{itemize}\setlength\itemsep{5pt}
+      \item Sparse $\Rightarrow$ update slower;\quad
+            Dense $\Rightarrow$ update faster
+      \item If $x^1$ is both sparse \emph{and} important,
+            we'd want to take updates to $w^1$ more seriously
+      \item Very common in large NNs with thousands of features
+            (e.g.\ credit fraud, education data)
+    \end{itemize}
+  \end{alertblock}
+
+  \medskip
+
+  \begin{exampleblock}{Intuition for the Fix}
+    \textbf{Decay the learning rate} in proportion to update history:
+    \[
+      \eta \;\propto\; \frac{1}{\text{update history}}
+    \]
+    Frequent feature $\Rightarrow$ give $\eta\!\downarrow$;\quad
+    Infrequent feature $\Rightarrow$ give $\eta\!\uparrow$.
+  \end{exampleblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{AdaGrad}
+  \begin{block}{AdaGrad Update Rule}
+    \[
+      v_t = v_{t-1} + (\nabla w_t)^2
+    \]
+    \[
+      \boxed{w_{t+1} = w_t
+        - \frac{\eta}{\sqrt{v_t+\varepsilon}}\,\nabla w_t}
+    \]
+    \begin{itemize}\setlength\itemsep{5pt}
+      \item Frequent feature
+            $\Rightarrow$ $v_t$ large
+            $\Rightarrow$ effective $\eta\!\downarrow$
+      \item Infrequent feature
+            $\Rightarrow$ $v_t$ small
+            $\Rightarrow$ effective $\eta$ stays large $\uparrow$
+    \end{itemize}
+  \end{block}
+
+  \medskip
+
+  \begin{block}{Behaviour (100 random $(x,y)$ pairs, 80\% sparse)}
+    Initially all algorithms (GD, Momentum, AdaGrad) move mainly along
+    the \textbf{vertical ($b$) axis}; very little movement along the
+    horizontal ($w$) axis.\\[4pt]
+    \textbf{Why?} Because the feature for $w$ is sparse, so $w$
+    undergoes few updates; $b$ is dense and updates frequently.
+  \end{block}
+
+  \medskip
+
+  \begin{alertblock}{Flip Side of AdaGrad}
+    $\sqrt{v_t}$ grows unboundedly (accumulates \emph{all} past squared
+    gradients).
+    The effective $\eta$ for $b$ \textbf{decays to zero} ---
+    AdaGrad gets \emph{stuck} near convergence.
+  \end{alertblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{RMSProp}
+  \begin{block}{Idea: Exponential Moving Average (EMA) of Squared Gradients}
+    Instead of accumulating \emph{all} past squared gradients, decay
+    them with $\beta > 0.9$:
+    \[
+      v_t = \beta\,v_{t-1} + (1-\beta)(\nabla w_t)^2
+    \]
+    \[
+      \boxed{w_{t+1} = w_t
+        - \frac{\eta}{\sqrt{v_t+\varepsilon}}\,\nabla w_t}
+    \]
+    \begin{itemize}\setlength\itemsep{5pt}
+      \item $v_1 = (1-\beta)(\nabla w_1)^2$
+      \item Still accumulates history, but \emph{not} aggressively
+            (only a fraction each step)
+      \item \textbf{Does not kill} the learning rate
+    \end{itemize}
+  \end{block}
+
+  \medskip
+
+  \begin{exampleblock}{Result}
+    RMSProp overcomes AdaGrad's decay problem by being less aggressive.
+    AdaGrad got stuck near convergence (unable to move in $b$ direction).
+    RMSProp \textbf{does not kill the learning rate}.
+  \end{exampleblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Adam: Adaptive Moment Estimation}
+  \begin{block}{Adam $=$ RMSProp $+$ Momentum $+$ Bias Correction}
+    \begin{align*}
+      m_t &= \beta_1\,m_{t-1} + (1-\beta_1)\,\nabla w_t
+            &\leftarrow&\ \text{1st moment (mean / direction)}\\
+      v_t &= \beta_2\,v_{t-1} + (1-\beta_2)(\nabla w_t)^2
+            &\leftarrow&\ \text{2nd moment (adaptive scaling)}\\[6pt]
+      \hat{m}_t &= \frac{m_t}{1-\beta_1^t},
+      &\hat{v}_t &= \frac{v_t}{1-\beta_2^t}
+            \quad\leftarrow\text{bias correction}\\[4pt]
+      \beta_1 &= 0.9,\quad \beta_2 = 0.99
+    \end{align*}
+    \[
+      \boxed{w_{t+1} = w_t
+        - \frac{\eta}{\sqrt{\hat{v}_t+\varepsilon}}\cdot\hat{m}_t}
+    \]
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Why Bias Correction in Adam?}
+  \begin{block}{Derivation via EMA}
+    Treat stochastic gradients $g_t = \nabla w_t$ as random variables.
+    We want the update to be close to $\mathbb{E}[g_t]$.
+    \[
+      m_t = (1-\beta)\sum_{i=1}^{t}\beta^{t-i}\,g_i
+    \]
+    \[
+      \mathbb{E}[m_t]
+        = \mathbb{E}[g_t]\cdot(1-\beta)\sum_{i=1}^{t}\beta^{t-i}
+        = \mathbb{E}[g_t]\cdot(1-\beta^t)
+    \]
+    (Assumes all $g_i$ from the same distribution,
+    i.e.\ $\mathbb{E}[g_i]=\mathbb{E}[g_t]$.)
+
+    \medskip
+
+    We \textbf{want} $\mathbb{E}[m_t] = \mathbb{E}[g_t]$,
+    so divide by $(1-\beta^t)$:
+    \[
+      \hat{m}_t = \frac{m_t}{1-\beta_1^t}
+      \quad\Rightarrow\quad
+      \mathbb{E}[\hat{m}_t] = \mathbb{E}[g_t]
+    \]
+    The same argument applies to $\hat{v}_t = v_t/(1-\beta_2^t)$.
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{AdamW (Transformer Variant)}
+  \begin{block}{AdamW: Weight Decay via the Gradient System}
+    In standard Adam: $g_t = \nabla_w\mathcal{L}(w_t)$.\\[4pt]
+    In \textbf{AdamW} (used in Transformers), weight decay is added
+    directly to the gradient:
+    \[
+      g_t \leftarrow \nabla_w\mathcal{L}(w_t) + \lambda\,w_t
+    \]
+    This yields:
+    \[
+      w_{t+1}
+        = w_t
+        - \frac{\eta\,\hat{m}_t}{\sqrt{\hat{v}_t+\varepsilon}}
+        - \eta\lambda\,w_t
+    \]
+    The extra $-\eta\lambda w_t$ term gives true
+    \textbf{weight-decay} behaviour: it optimises the loss
+    and independently shrinks the weights.
+  \end{block}
+
+  \medskip
+
+  \begin{exampleblock}{Adam vs AdamW}
+    In Adam, $\lambda w_t$ goes inside the moment estimation,
+    changing the adaptive scaling.
+    In AdamW, $\lambda w_t$ is applied \emph{after} the
+    adaptive step --- cleaner decoupling.
+  \end{exampleblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Optimizer Comparison}
+  \begin{block}{Hierarchy of Preference (in practice)}
+    \centering
+    \renewcommand{\arraystretch}{1.35}
+    \begin{tabular}{ll}
+      \toprule
+      \textbf{Optimizer} & \textbf{Notes}\\
+      \midrule
+      GD                 & Baseline\\
+      GD + Momentum      & Better for gentle slopes\\
+      NAG                & ``Look before you leap''\\
+      AdaGrad            & Adaptive $\eta$; kills learning rate over time\\
+      RMSProp            & Fixes AdaGrad decay via EMA\\
+      \textbf{Adam}      & \textbf{Default choice}
+                           $(\beta_1{=}0.9,\,\beta_2{=}0.999,\,
+                           \varepsilon{=}10^{-8})$\\
+      \bottomrule
+    \end{tabular}
+  \end{block}
+
+  \medskip
+
+  \begin{alertblock}{Caveats}
+    \begin{itemize}\setlength\itemsep{5pt}
+      \item Adam does \emph{not} actually converge in some real-world
+            cases --- some recent work confirms this
+      \item For sequence generation: $\eta = 0.001$ or $0.0001$
+            work best
+      \item SGD + Momentum (Nesterov/Classical) with simple annealing
+            also works well in practice
+      \item Adam \emph{might} be the best choice, but is not
+            guaranteed to be!
+    \end{itemize}
+  \end{alertblock}
+\end{frame}
+
+%==================================================================
+\section{Lec 6.2: Linear Algebra --- Basis \& Orthonormal Vectors}
+%==================================================================
+
+\begin{frame}[shrink=10]{Basis \& Linear Independence}
+  \begin{block}{Basis}
+    A set of vectors $\in\mathbb{R}^n$ is a \textbf{basis} if they are
+    linearly independent and every vector $\in\mathbb{R}^n$ can be
+    expressed as a linear combination of them.
+  \end{block}
+
+  \medskip
+
+  \begin{block}{Linearly Independent Vectors}
+    $v_1,\ldots,v_n$ are linearly independent iff the only solution to
+    \[
+      c_1 v_1 + c_2 v_2 + \cdots + c_n v_n = \mathbf{0}
+    \]
+    is $c_1 = c_2 = \cdots = c_n = 0$.
+  \end{block}
+
+  \medskip
+
+  \begin{exampleblock}{Example in $\mathbb{R}^2$}
+    $x=[1,0]^T$ and $y=[0,1]^T$ are the standard unit vectors.
+    Any $[a,b]^T \in \mathbb{R}^2$ equals $a[1,0]^T + b[0,1]^T$.\\[4pt]
+    \textbf{Nothing is sacrosanct} about this choice --- we could
+    equally use $[2,3]^T$ and $[5,7]^T$ as basis vectors.
+    In general, any $n$ linearly independent vectors in $\mathbb{R}^n$
+    form a basis.
+  \end{exampleblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Orthonormal Basis}
+  \begin{block}{Representing Any Vector}
+    \[
+      z = \alpha_1 u_1 + \alpha_2 u_2 + \cdots + \alpha_n u_n
+    \]
+    Solving for the $\alpha_i$ via Gaussian elimination:
+    $O(n^3)$.
+  \end{block}
+
+  \medskip
+
+  \begin{block}{Orthonormal $=$ Orthogonal $+$ Normal (unit vectors)}
+    \[
+      u_i^T u_j = 0\ \forall\,i\neq j,
+      \qquad
+      u_i^T u_i = \|u_i\|^2 = 1
+    \]
+    With an orthonormal basis we can \textbf{directly} find each
+    $\alpha_i$:
+    \[
+      \alpha_i = z^T u_i
+    \]
+    Linear complexity $O(N)$ per coefficient
+    $\Rightarrow$ total $O(Nn)$ vs.\ $O(n^3)$.
+
+    \medskip
+
+    \textbf{Orthonormal basis is the most convenient basis!}
+  \end{block}
+\end{frame}
+
+%==================================================================
+\section{Lec 6.1: Eigenvalues \& Eigenvectors}
+%==================================================================
+
+\begin{frame}[shrink=10]{Eigenvalues \& Eigenvectors}
+  \begin{block}{Motivation}
+    When a matrix $A$ multiplies a general vector, the vector
+    \textbf{strays from its direction} --- it may get rotated, scaled,
+    or shortened.
+    For a given square $A$ there exist \textbf{special vectors that
+    refuse to stray}: they only get scaled.
+  \end{block}
+
+  \medskip
+
+  \begin{block}{Definition}
+    \[
+      Ax = \lambda x
+    \]
+    The vector changes magnitude only, \textbf{not direction}.
+    $x$ is an \textbf{eigenvector}; $\lambda$ is its
+    \textbf{eigenvalue}.
+  \end{block}
+
+  \medskip
+
+  \begin{columns}[T]
+    \column{0.5\textwidth}
+    \begin{block}{Theorem 1}
+      Eigenvectors of $A\in\mathbb{R}^{n\times n}$ with
+      \textbf{distinct eigenvalues} are
+      \textbf{linearly independent} $\Rightarrow$ form a basis.
+    \end{block}
+
+    \column{0.46\textwidth}
+    \begin{block}{Theorem 2}
+      Eigenvectors of a \textbf{square symmetric} matrix are
+      \textbf{orthogonal}.
+    \end{block}
+  \end{columns}
+
+  \medskip
+
+  \begin{exampleblock}{Applications}
+    PCA, Autoencoders, SVD word vectors, PageRank (limelight),
+    spectral graph theory.
+  \end{exampleblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Why Use Eigenvectors as a Basis?}
+  \begin{block}{Key Motivation for PCA}
+    A square symmetric matrix gives a very convenient basis:
+    its eigenvectors are \textbf{orthogonal} (Thm 2) and form a
+    \textbf{linearly independent set} (Thm 1).
+  \end{block}
+
+  \medskip
+
+  \begin{block}{Optimisation Connection}
+    For square symmetric $n\times n$ matrix $A$:
+    \begin{align*}
+      \max_x\ x^TAx \quad &\text{s.t.}\ \|x\|=1
+      &\Rightarrow&\ \text{eigenvector of \textbf{largest} eigenvalue}\\
+      \min_x\ x^TAx \quad &\text{s.t.}\ \|x\|=1
+      &\Rightarrow&\ \text{eigenvector of \textbf{smallest} eigenvalue}
+    \end{align*}
+    \textit{Proof:} Lagrangian $L = x^TAx - \lambda(x^Tx-1)$;
+    $\;\tfrac{dL}{dx} = 2Ax - 2\lambda x = 0
+    \Rightarrow Ax = \lambda x$.
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Dominant Eigenvalue \& Steady State}
+  \begin{block}{Stochastic Matrix}
+    A matrix $M$ is \textbf{stochastic} if all entries are positive
+    and every \emph{column} sums to 1.
+  \end{block}
+
+  \medskip
+
+  \begin{theorem}[Dominant Eigenvalue of a Stochastic Matrix]
+    The largest (dominant) eigenvalue of a stochastic matrix is
+    $\mathbf{1}$.
+  \end{theorem}
+
+  \medskip
+
+  \begin{theorem}
+    If $A$ is $n\times n$ with dominant eigenvalue $d_1$, then
+    $Ax_0,\,A^2x_0,\,A^3x_0,\ldots$ approaches a
+    \textbf{multiple of the dominant eigenvector} of $A$.
+    In general: $A^p x_0 = k|d_1|^p\,e_{d_1}$.
+  \end{theorem}
+
+  \medskip
+
+  \begin{block}{Sequence Behaviour}
+    \begin{itemize}\setlength\itemsep{5pt}
+      \item $|\lambda|>1$ $\Rightarrow$ sequence \textbf{explodes}
+      \item $|\lambda|<1$ $\Rightarrow$ sequence \textbf{vanishes}
+      \item $|\lambda|=1$ $\Rightarrow$ sequence reaches a
+            \textbf{steady state}
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{Stochastic Matrix Example: Two-Restaurant Problem}
+  \begin{block}{Setup}
+    \[
+      V_{(0)} = \begin{bmatrix}k_1\\k_2\end{bmatrix},
+      \qquad
+      M = \begin{bmatrix}p & 1-q\\ 1-p & q\end{bmatrix}
+    \]
+    Fraction $p$ of Chinese-restaurant students stay the next day;
+    $(1-p)$ switch.
+    Fraction $q$ of Mexican-restaurant students stay;
+    $(1-q)$ switch.\\[4pt]
+    $V_{(n)} = M^n V_{(0)}$ ---
+    will the population reach a \textbf{steady state}?
+  \end{block}
+
+  \medskip
+
+  \begin{block}{Answer via Eigenvalues}
+    $M$ is stochastic $\Rightarrow$ dominant eigenvalue $= 1$
+    $\Rightarrow$ $V_{(n)} \to k\cdot e_d$ (a multiple of the dominant
+    eigenvector).
+    \textbf{Population becomes constant after some step $n$.}
+  \end{block}
+\end{frame}
+
+%==================================================================
+\section{Lec 6.3: Eigenvalue Decomposition (EVD)}
+%==================================================================
+
+\begin{frame}[shrink=10]{Eigenvalue Decomposition}
+  \begin{block}{Construction}
+    Let $u_1,\ldots,u_n$ be eigenvectors of $A$ and
+    $d_1,\ldots,d_n$ the corresponding eigenvalues.
+    Let $U$ have columns $u_1,\ldots,u_n$:
+    \[
+      AU = [Au_1\ \cdots\ Au_n]
+         = [d_1u_1\ \cdots\ d_nu_n]
+         = U\Lambda
+    \]
+    \[
+      \boxed{A = U\Lambda U^{-1}}
+      \qquad\text{(Eigenvalue Decomposition)}
+    \]
+    \[
+      \Lambda = U^{-1}AU
+      \qquad\text{(Diagonalisation of }A\text{)}
+    \]
+  \end{block}
+
+  \medskip
+
+  \begin{block}{Symmetric Case}
+    If $A$ is symmetric: eigenvectors are orthogonal and normalised,
+    so $U^TU = I \Rightarrow U^{-1} = U^T$:
+    \[
+      A = U\Lambda U^T
+    \]
+    Sequence $x_0,Ax_0,A^2x_0,\ldots$ in terms of EVD:
+    $U\Lambda^n U^T x_0$ ---
+    explodes if $|\lambda|>1$, steady if $|\lambda|=1$,
+    vanishes if $|\lambda|<1$.
+  \end{block}
+\end{frame}
+
+%==================================================================
+\section{Lec 6.4: PCA \& Its Interpretations}
+%==================================================================
+
+\begin{frame}[shrink=10]{PCA: Motivation}
+  \begin{block}{Goal}
+    Represent data using \textbf{fewer dimensions} such that:
+    \begin{itemize}\setlength\itemsep{5pt}
+      \item Data has \textbf{high variance} along these dimensions
+      \item Dimensions are \textbf{linearly independent} (uncorrelated)
+      \item Even better: dimensions are \textbf{orthogonal}
+            (most convenient basis)
+    \end{itemize}
+  \end{block}
+
+  \medskip
+
+  \begin{block}{Covariance}
+    \[
+      c_{ij}
+        = \frac{1}{m}\sum_{l=1}^{m}(x_{li}-\mu_i)(x_{lj}-\mu_j)
+        = \frac{1}{m}(X^TX)_{ij}
+        \quad(\mu_i=0\ \text{for zero-mean data})
+    \]
+    \begin{itemize}\setlength\itemsep{4pt}
+      \item $+$cov: both increase/decrease together
+      \item $-$cov: one increases as the other decreases
+      \item $\approx 0$: no linear relationship
+    \end{itemize}
+  \end{block}
+
+  \begin{exampleblock}{Correlation}
+    Normalised covariance; direction $-1$ to $+1$ and strength.
+    $+1$: perfect positive; $0$: no linear relationship;
+    $-1$: perfect negative.
+    High correlation $\Rightarrow$ one variable is redundant.
+  \end{exampleblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{PCA: Mathematical Formulation}
+  \begin{block}{Setup}
+    Data matrix $X\in\mathbb{R}^{m\times n}$ (zero-mean, unit variance).
+    Let $P=[p_1\;\cdots\;p_n]$ be an $n\times n$ orthonormal matrix.
+    \[
+      \hat{X} = XP
+      \qquad\text{(projection onto new basis)}
+    \]
+    For an orthonormal basis: $\alpha_{ij} = x_i^T p_j$.
+  \end{block}
+
+  \medskip
+
+  \begin{block}{Covariance of Transformed Data}
+    \textbf{Theorem}: If $X$ has zero-mean columns then so does
+    $\hat{X}=XP$.\\[4pt]
+    \textbf{Theorem}: $X^TX$ is symmetric.\\[6pt]
+    \[
+      \frac{1}{m}\hat{X}^T\hat{X}
+        = \frac{1}{m}P^T X^T X P
+        = P^T\Sigma P,
+      \qquad
+      \Sigma = \tfrac{1}{m}X^TX
+    \]
+    We \textbf{want} $P^T\Sigma P = D$ (diagonal):
+    \[
+      \bigl(\tfrac{1}{m}\hat{X}^T\hat{X}\bigr)_{ij}
+        = 0\ (i\neq j)
+        \text{ (zero covariance)},\quad
+      \neq 0\ (i=j)
+      \text{ (non-zero variance)}
+    \]
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{PCA: The Answer}
+  \begin{block}{Which $P$ Diagonalises $\Sigma$?}
+    The matrix $P$ whose columns are the
+    \textbf{eigenvectors of $\Sigma = \frac{1}{m}X^TX$}:
+    \[
+      \Sigma = P\Lambda P^T
+      \;\Rightarrow\;
+      P^T\Sigma P = \Lambda\text{ (diagonal)}
+    \]
+    The new basis $P$ is the \textbf{eigenvector basis of $X^TX$}.
+  \end{block}
+
+  \medskip
+
+  \begin{block}{Why Is This a Good Basis?}
+    \begin{itemize}\setlength\itemsep{5pt}
+      \item Eigenvectors of $X^TX$ are \textbf{linearly independent}
+            (Thm 1)
+      \item Eigenvectors of $X^TX$ are \textbf{orthogonal}
+            (since $X^TX$ is symmetric; Thm 2)
+      \item This is \textbf{Principal Component Analysis (PCA)}:
+            transforms data to a basis with low covariance and high
+            variance dimensions
+      \item In practice, keep only the \textbf{top-$k$} dimensions
+            (high eigenvalue $\Rightarrow$ high variance)
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+%==================================================================
+\section{Lec 6.5: PCA --- Interpretation 2 (Reconstruction Error)}
+%==================================================================
+
+\begin{frame}[shrink=10]{PCA Interpretation 2: Minimising Reconstruction Error}
+  \begin{block}{Setup}
+    Given $n$ orthonormal vectors $p_1,\ldots,p_n$ we can represent
+    each $x_i$ exactly:
+    \[
+      x_i = \sum_{j=1}^{n}\alpha_{ij}\,p_j
+    \]
+    Keep only the \textbf{top-$k$ dimensions}:
+    \[
+      \hat{x}_i = \sum_{j=1}^{k}\alpha_{ij}\,p_j
+    \]
+    Select $p_j$'s to minimise reconstruction error:
+    \[
+      e = \sum_{i=1}^{m}(x_i-\hat{x}_i)^T(x_i-\hat{x}_i)
+    \]
+  \end{block}
+
+  \medskip
+
+  \begin{block}{Result (using orthonormality)}
+    After simplification:
+    \[
+      e = \sum_{j=k+1}^{n} p_j^T\Sigma\,p_j
+    \]
+    Minimising $e$ $\Rightarrow$ select $p_{k+1},\ldots,p_n$ as the
+    \textbf{smallest eigenvectors} of $\Sigma$, i.e.\
+    \textbf{keep the top-$k$ eigenvectors}.
+    The discarded $n-k$ directions are those with minimum variance.
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{PCA Interpretation 2: Worked Example}
+  \begin{exampleblock}{Example in $\mathbb{R}^2$ (data along $y=x$)}
+    New basis:
+    $u_1 = \bigl[\tfrac{1}{\sqrt{2}},\tfrac{1}{\sqrt{2}}\bigr]^T$
+    and
+    $u_2 = \bigl[-\tfrac{1}{\sqrt{2}},\tfrac{1}{\sqrt{2}}\bigr]^T$.\\[6pt]
+    Consider $x = [3.3,\ 3]$:
+    \[
+      \alpha_1 = x^Tu_1 = \frac{6.3}{\sqrt{2}},
+      \qquad
+      \alpha_2 = x^Tu_2 = \frac{0.3}{\sqrt{2}}
+    \]
+    \textbf{Perfect reconstruction (2-D):}
+    $\hat{x} = \alpha_1 u_1 + \alpha_2 u_2 = [3.3,\ 3]$.\\[6pt]
+    \textbf{Using top-1 only} (ignoring low-variance $u_2$):
+    \[
+      \hat{x} = \alpha_1 u_1 = [3.15,\ 3.15]
+      \quad\text{(minimum reconstruction error)}
+    \]
+    Small $\alpha_2$ $\Rightarrow$ discarding $u_2$ introduces little
+    error.
+  \end{exampleblock}
+
+  \medskip
+
+  \begin{block}{Key Idea}
+    PCA uses only the top-$k$ eigenvectors:
+    \begin{enumerate}\setlength\itemsep{4pt}
+      \item Covariance between new dimensions is 0
+            (diagonalise covariance matrix)
+      \item Discarded dimensions are those with minimum variance
+            (minimum reconstruction error)
+    \end{enumerate}
+  \end{block}
+\end{frame}
+
+%==================================================================
+\section{Lec 6.6: PCA --- Interpretation 3 (Variance)}
+%==================================================================
+
+\begin{frame}[shrink=10]{PCA Interpretation 3: Maximising Variance}
+  \begin{block}{Variance along the $i$-th Dimension}
+    The $i$-th dimension of the transformed data is $\hat{X}_i = Xp_i$.
+    Its variance:
+    \[
+      \frac{\hat{X}_i^T\hat{X}_i}{m}
+        = \frac{1}{m}p_i^T X^T X p_i
+        = \frac{1}{m}p_i^T\lambda_i p_i
+        = \frac{\lambda_i}{m}
+    \]
+    (since $p_i$ is an eigenvector of $X^TX$ with eigenvalue
+    $\lambda_i$, and $p_i^Tp_i = 1$).
+  \end{block}
+
+  \medskip
+
+  \begin{block}{Conclusion}
+    Variance along dimension $i$ is \textbf{scaled by eigenvalue
+    $\lambda_i$}.\\[4pt]
+    Discarding low-eigenvalue dimensions
+    $\Rightarrow$ discarding \textbf{lowest-variance} (most noisy,
+    least informative) dimensions.
+    $\Rightarrow$ We did the right thing!
+  \end{block}
+
+  \medskip
+
+  \begin{block}{Quick Summary: Three Interpretations of PCA}
+    \begin{enumerate}\setlength\itemsep{4pt}
+      \item \textbf{Covariance}: covariance between new dimensions is
+            \textbf{minimised} (diagonalise $\Sigma$)
+      \item \textbf{Variance}: dimensions are chosen to have
+            \textbf{high variance}
+      \item \textbf{Compression}: data representable with
+            \textbf{fewer dimensions}
+            (minimum reconstruction error)
+    \end{enumerate}
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{PCA in Practice: Eigenfaces}
+  \begin{block}{Setup}
+    $X\in\mathbb{R}^{m\times 10K}$
+    ($100\times100$ images $= 10\,\text{K}$ dimensions).\\[4pt]
+    Retain \textbf{top 50--100 eigenvectors} of $X^TX$:
+    \begin{itemize}\setlength\itemsep{5pt}
+      \item $X^TX$ is $n\times n$ ($n=10\,\text{K}$);
+            each eigenvector is $n$-dimensional
+      \item Convert each eigenvector to a $100\times100$ image
+            $\Rightarrow$ \textbf{eigenface}
+      \item These form a basis for any face in the dataset
+    \end{itemize}
+  \end{block}
+
+  \medskip
+
+  \begin{block}{Benefits}
+    \begin{itemize}\setlength\itemsep{5pt}
+      \item Any face $=$ linear combination of eigenfaces
+      \item Store $p_1,\ldots,p_k$ once; then only scalars
+            $\alpha_{i1},\ldots,\alpha_{ik}$ per image
+      \item \textbf{Data compression}: significant storage savings with
+            little quality loss
+      \item Multiple images of the same person (different lighting,
+            contrast) are \emph{closer} in the new space
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+%==================================================================
+%  PCA SUMMARY SLIDE (standalone section)
+%==================================================================
+\section{PCA: Complete Summary}
+
+\begin{frame}[shrink=10]{PCA: Complete Summary --- Setup \& Goal}
+  \begin{block}{The Problem We Solve}
+    Given $m$ data points in $\mathbb{R}^n$ (zero-mean),
+    find a new \textbf{orthonormal basis} of size $k\ll n$ such that:
+    \begin{enumerate}\setlength\itemsep{5pt}
+      \item Dimensions are \textbf{uncorrelated} (zero off-diagonal
+            covariance)
+      \item Data exhibits \textbf{maximum variance} in these directions
+      \item \textbf{Reconstruction error} from the $k$-dim
+            approximation is minimised
+    \end{enumerate}
+  \end{block}
+
+  \medskip
+
+  \begin{block}{One Algorithm, Three Views}
+    \centering
+    \renewcommand{\arraystretch}{1.3}
+    \begin{tabular}{lcl}
+      \toprule
+      \textbf{Interpretation} & \textbf{Optimises} & \textbf{By}\\
+      \midrule
+      Decorrelation  & min off-diagonal covariance &
+                       diagonalise $\Sigma$\\
+      Max Variance   & max variance per dimension  &
+                       keep top eigenvalues\\
+      Min Error      & min reconstruction error    &
+                       discard small eigenvectors\\
+      \bottomrule
+    \end{tabular}\\[6pt]
+    \textbf{All three views give the same answer:}
+    use the eigenvectors of $\Sigma = \tfrac{1}{m}X^TX$.
+  \end{block}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{PCA: Complete Summary --- The Algorithm}
+  \begin{block}{Step-by-Step}
+    \begin{enumerate}\setlength\itemsep{7pt}
+      \item \textbf{Centre} the data: $x_i \leftarrow x_i - \mu$
+      \item \textbf{Compute} covariance matrix
+            $\Sigma = \tfrac{1}{m}X^TX\in\mathbb{R}^{n\times n}$
+      \item \textbf{Eigendecompose}: $\Sigma = P\Lambda P^T$
+            (columns of $P$ are eigenvectors; diagonal of $\Lambda$
+            are eigenvalues $\lambda_1\geq\lambda_2\geq\cdots\geq\lambda_n$)
+      \item \textbf{Select} top-$k$ eigenvectors
+            $P_k = [p_1,\ldots,p_k]\in\mathbb{R}^{n\times k}$
+      \item \textbf{Project}: $\hat{X} = XP_k\in\mathbb{R}^{m\times k}$
+    \end{enumerate}
+  \end{block}
+
+  \medskip
+
+  \begin{exampleblock}{Key Properties of the Transformed Data}
+    \begin{itemize}\setlength\itemsep{5pt}
+      \item $\hat{X}$ has \textbf{zero mean} (inherited from $X$)
+      \item Covariance of $\hat{X}$:
+            $\tfrac{1}{m}\hat{X}^T\hat{X} = \Lambda_k$
+            (diagonal $\Rightarrow$ uncorrelated dimensions)
+      \item Variance along $i$-th new dimension
+            $= \lambda_i / m$
+      \item Fraction of variance retained
+            $= \sum_{i=1}^{k}\lambda_i / \sum_{i=1}^{n}\lambda_i$
+    \end{itemize}
+  \end{exampleblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{PCA: Complete Summary --- Why Eigenvectors?}
+  \begin{columns}[T]
+    \column{0.48\textwidth}
+    \begin{block}{Theorem 1}
+      Eigenvectors of $A$ with \textbf{distinct eigenvalues} are
+      \textbf{linearly independent}.\\[4pt]
+      $\Rightarrow$ They form a basis.
+    \end{block}
+
+    \column{0.48\textwidth}
+    \begin{block}{Theorem 2}
+      Eigenvectors of a \textbf{symmetric} matrix are
+      \textbf{orthogonal}.\\[4pt]
+      $\Rightarrow$ $\Sigma = \tfrac{1}{m}X^TX$ is symmetric,
+      so its eigenvectors are orthogonal.
+    \end{block}
+  \end{columns}
+
+  \bigskip
+
+  \begin{block}{Optimisation View}
+    \[
+      \max_{p:\|p\|=1}\ p^T\Sigma\,p \;=\; \lambda_{\max}
+      \quad\text{(achieved by top eigenvector)}
+    \]
+    Each subsequent direction maximises remaining variance subject to
+    being orthogonal to all previous directions.
+  \end{block}
+
+  \bigskip
+
+  \begin{alertblock}{Discard Low-Eigenvalue Directions Because\ldots}
+    \begin{itemize}\setlength\itemsep{4pt}
+      \item Low eigenvalue $\Rightarrow$ low variance $\Rightarrow$
+            mostly noise
+      \item Low eigenvalue $\Rightarrow$ small $\alpha_{ij}$
+            $\Rightarrow$ small reconstruction error if dropped
+    \end{itemize}
+  \end{alertblock}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}[shrink=10]{PCA: Complete Summary --- Connections \& Applications}
+  \begin{block}{Connections to Other Concepts}
+    \begin{itemize}\setlength\itemsep{6pt}
+      \item \textbf{EVD}: $\Sigma = P\Lambda P^T$ is exactly EVD of a
+            symmetric matrix; $P^{-1} = P^T$
+      \item \textbf{Orthonormal basis}: eigenvectors of a symmetric
+            matrix are orthogonal $\Rightarrow$ finding coordinates is
+            $O(N)$ per dimension
+      \item \textbf{SVD}: PCA of $X$ is equivalent to SVD of $X$;
+            eigenvectors of $X^TX$ are the right singular vectors
+      \item \textbf{Stochastic matrix}: dominant eigenvector gives
+            the steady state distribution (same maths, different context)
+    \end{itemize}
+  \end{block}
+
+  \medskip
+
+  \begin{block}{Applications}
+    \begin{itemize}\setlength\itemsep{5pt}
+      \item \textbf{Eigenfaces}: face recognition using top-100
+            eigenvectors of $X^TX$; any face is a linear combination
+            of eigenfaces
+      \item \textbf{Data compression}: store $k$ scalars per image
+            instead of $n=10\,\text{K}$ pixels
+      \item \textbf{Pre-processing for classifiers}: uncorrelated,
+            high-variance features improve generalisation
+      \item \textbf{Noise reduction}: discarding low-variance dimensions
+            removes uninformative noise
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+%==================================================================
+\section{Summary}
+%==================================================================
+
+\begin{frame}[shrink=10]{Summary}
+  \begin{columns}[T]
+    \column{0.48\textwidth}
+    \begin{block}{Optimization Algorithms}
+      \begin{itemize}\setlength\itemsep{4pt}
+        \item \textbf{Momentum}: exponentially weighted gradient history;
+              fast on gentle slopes; U-turns but faster than vanilla GD
+        \item \textbf{NAG}: ``look before you leap''; checks future slope
+        \item \textbf{SGD / MBGD}: stochastic; fewer calculations;
+              mini-batch reduces oscillations
+        \item \textbf{AdaGrad}: adaptive $\eta$; fixes sparse features;
+              kills $\eta$ via unbounded accumulation
+        \item \textbf{RMSProp}: EMA decay; fixes AdaGrad
+        \item \textbf{Adam}: RMSProp + Momentum + bias correction;
+              \textbf{default choice}
+        \item \textbf{AdamW}: Adam + weight decay in gradient
+              (Transformers)
+      \end{itemize}
+    \end{block}
+
+    \column{0.48\textwidth}
+    \begin{block}{Linear Algebra for DL}
+      \begin{itemize}\setlength\itemsep{4pt}
+        \item \textbf{Basis}: linearly independent spanning set
+        \item \textbf{Orthonormal basis}: most convenient; $O(N)$
+              projection
+        \item \textbf{Eigenvectors}: $Ax=\lambda x$; symmetric
+              $\Rightarrow$ orthogonal
+        \item \textbf{EVD}: $A=U\Lambda U^{-1}$; symmetric:
+              $A=U\Lambda U^T$
+        \item \textbf{Stochastic matrix}: dominant eigenvalue is 1;
+              steady state exists
+        \item \textbf{PCA}: 3 interpretations: decorrelation,
+              max variance, min reconstruction error
+        \item \textbf{Eigenfaces}: PCA for face compression
+      \end{itemize}
+    \end{block}
+  \end{columns}
+
+  \medskip
+
+  \begin{center}
+    \large\textit{%
+      ``Gentle slope $\to$ slow GD, fast momentum;
+       Steep slope $\to$ fast GD, large gradient, careful $\eta$.''}
+  \end{center}
+\end{frame}
+
+%------------------------------------------------------------------
+\begin{frame}
+  \Huge{\centerline{Thank You}}
+  \vspace{0.6cm}
+  \large{\centerline{Questions?}}
+\end{frame}
+
+\end{document}
